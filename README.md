@@ -1,0 +1,1 @@
+# plugins-quick-interest-slider
