@@ -1,10 +1,10 @@
-=== Loan Repayment Calculator and Application Form ===
+=== Quick Interest Slider ===
 
-Contributors: 
+Contributors: Dev
 Tags: loan slider jquery
 Requires at least: 6.0
-Tested up to: 6.5
-Stable tag: 3.1.1
+Tested up to: 6.7
+Stable tag: 3.1.3
 License: GPLv2 or later
 
 A simple repayment calculator. Uses sliders to set the amount and term and displays a range of outputs
@@ -67,6 +67,14 @@ Bespoke versions available for bank comparisons, quotes, full loan applications 
 6.	Change the options in the plugin settings page.
 
 == Changelog ==
+
+= 3.1.3 =
+
+*	Fixed XSS vulnerability
+
+= 3.1.2 =
+
+*	Fixes CSS bug in output rable rendering
 
 = 3.1.1 =
 

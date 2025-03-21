@@ -11,6 +11,7 @@ function qis_get_stored_forex() {
 		$renew		= strtotime((new DateTime('18:00',new DateTimeZone('GMT')))->format('r'));
 		
 		// collect the data from the page
+		/*
 		$curl		= curl_init();
 		curl_setopt($curl, CURLOPT_URL, "https://api.fixer.io/latest");
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -18,7 +19,9 @@ function qis_get_stored_forex() {
 		$list		= json_decode(curl_exec($curl));
 
 		curl_close($curl);
-		
+		*/
+		$response = wp_remote_get( "https://api.fixer.io/latest" );
+        $list		= json_decode($response["body"]);	
 		if (isset($list->rates)) {
 			// Data successfully pulled
 			$rates 	= (array) $list->rates;
@@ -39,7 +42,7 @@ function qis_key() {
 	
 	$qppkey = get_option('qpp_key');
 
-	if(is_array($qppkey)) {
+	if (is_array($qppkey) && strlen($qppkey['key']) > 10) {
 		return $qppkey;
 	} else {
 		$qppkey = array('authorised' => false,'key'=> false);
@@ -221,18 +224,18 @@ function qis_get_stored_settings($theform) {
 		'interestrate4'		=> '',
 		'interestname4'		=> __('Slider','quick-interest-slider'),
 		'shortmonths' => array(
-			__('Jan'), 
-			__('Feb'), 
-			__('Mar'), 
-			__('Apr'), 
-			__('May'), 
-			__('Jun'), 
-			__('Jul'), 
-			__('Aug'), 
-			__('Sep'), 
-			__('Oct'), 
-			__('Nov'), 
-			__('Dec')
+			__('Jan','quick-interest-slider'), 
+			__('Feb','quick-interest-slider'), 
+			__('Mar','quick-interest-slider'), 
+			__('Apr','quick-interest-slider'), 
+			__('May','quick-interest-slider'), 
+			__('Jun','quick-interest-slider'), 
+			__('Jul','quick-interest-slider'), 
+			__('Aug','quick-interest-slider'), 
+			__('Sep','quick-interest-slider'), 
+			__('Oct','quick-interest-slider'), 
+			__('Nov','quick-interest-slider'), 
+			__('Dec','quick-interest-slider')
 		),
 		'interestdropdown'	=> false,
 		'interestdropdownlabel'=> 'Select the interest rate',
@@ -368,7 +371,7 @@ function qis_get_stored_style() {
 		$update = true;
 	}
 	if ($update) update_option( 'qis_style', $style);
-
+	
 	return $style;
 }
 
@@ -1160,4 +1163,10 @@ function callback_allowed_html() {
 	);
 	
 	return $allowed_tags;
+}
+function sanitize_textfield_input($input_var){
+	if(isset($input_var)){
+		return sanitize_text_field(wp_unslash($input_var));
+	}
+	return null;
 }

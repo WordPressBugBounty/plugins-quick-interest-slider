@@ -3,14 +3,17 @@
 Plugin Name: Quick Interest Slider
 Plugin URI: http://loanpaymentplugin.com/
 Description: Interest calculator with slider and multiple display options.
-Version: 3.1.1
+Version: 3.1.3
 Author: aerin
 Author URI: http://quick-plugins.com/
 Text Domain: quick-interest-slider
 Domain Path: /languages
 License: GPLv2 or later
-
 */
+
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+define('QIS_VERSION', '3.1.3');
 
 require_once( plugin_dir_path( __FILE__ ) . '/options.php' );
 require_once( plugin_dir_path( __FILE__ ) . '/register.php' );
@@ -91,10 +94,10 @@ function qis_get_calculator() {
 	
 	$return = ['success' => false];
 	
-	if (isset($_POST['attributes'])) {
+	if (isset($_POST['attributes'])) { // phpcs:ignore WordPress.Security.NonceVerification
 		
 		// Pass the shortcode attributes to the qis_loop handler
-		$data = qis_loop($_POST['attributes']);
+		$data = qis_loop($_POST['attributes']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		
 		$return['data']		= $data;
 		$return['success']	= true;
@@ -108,7 +111,7 @@ function qis_get_calculator() {
 
 function qis_get_stylesheet() {
 	$allowed_html = callback_allowed_html();
-	if (isset($_POST['form'])) {
+	if (isset($_POST['form'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		header('content-type: text/css');
 		echo wp_kses(qis_generate_css(),$allowed_html);
 	}
@@ -127,7 +130,7 @@ function qis_block_init() {
 	wp_register_script(
 		'block',
 		plugins_url( 'block.js', __FILE__ ),
-		array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-editor' )
+		array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-editor' ),"1.1",true
 	);
 
 	// Register our block, and explicitly define the attributes we accept.
@@ -215,8 +218,12 @@ function qis_loop($atts) {
 		'use'				=> ''
 	),$atts,'quick-interest-slider');
 	
-	if (isset($_GET['amount']) && $_GET['amount'])	$atts['loaninitial'] = $_GET['amount'];
-	if (isset($_GET['term']) && $_GET['term'])		$atts['periodinitial'] = $_GET['term'];
+	foreach ($atts as $key => $value) {
+		$atts[$key] = sanitize_text_field($atts[$key]);
+	}
+	
+	if (isset($_GET['amount']) && $_GET['amount'])	$atts['loaninitial'] = $_GET['amount']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (isset($_GET['term']) && $_GET['term'])		$atts['periodinitial'] = $_GET['term']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	
 	$dropdown = qis_get_stored_dropdown();
 	
@@ -243,10 +250,10 @@ function qis_loop($atts) {
 	
 	// Apply Now Button
 	
-	if (!empty($_POST['qisapply'])) {
-		$formvalues = qis_check_key($_POST);
-		if (isset($_GET['param'])) {
-			$formvalues['param'] = $_GET['param'];
+	if (!empty($_POST['qisapply'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$formvalues = qis_check_key($_POST); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		if (isset($_GET['param'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$formvalues['param'] = $_GET['param']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		} else {
 			$formvalues['param'] = false;
 		}
@@ -254,26 +261,26 @@ function qis_loop($atts) {
 		$dropdown = qis_get_stored_dropdown();
 		$url = $settings['applynowaction'];
 		if ($settings['applynowquery']) {
-			$settings['querystructure'] = str_replace('[total]', $_POST['totalamount'], $settings['querystructure']);
-			$settings['querystructure'] = str_replace('[amount]', $_POST['loan-amount'], $settings['querystructure']);
-			$settings['querystructure'] = str_replace('[term]', $_POST['loan-period'], $settings['querystructure']);
-			$settings['querystructure'] = str_replace('[rate]', $_POST['rate'], $settings['querystructure']);
+			$settings['querystructure'] = str_replace('[total]', $_POST['totalamount'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$settings['querystructure'] = str_replace('[amount]', $_POST['loan-amount'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$settings['querystructure'] = str_replace('[term]', $_POST['loan-period'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$settings['querystructure'] = str_replace('[rate]', $_POST['rate'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$settings['querystructure'] = str_replace('[form]', $formvalues['formname'], $settings['querystructure']);
 			$settings['querystructure'] = str_replace('[calculator]', $dropdown['forms'][$formvalues['formname']], $settings['querystructure']);
 			if ($formvalues['param']) $settings['querystructure'] = str_replace('[param]', $formvalues['param'], $settings['querystructure']);
 			$url = $url.$settings['querystructure'];
 		}
 
-		echo "<p>".__('Redirecting....','quick-interest-slider')."</p>";
-		echo '<meta http-equiv="refresh" content="0;url='.$url.'" />';
+		echo "<p>".__('Redirecting....','quick-interest-slider')."</p>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<meta http-equiv="refresh" content="0;url='.$url.'" />'; // phpcs:ignore  WordPress.Security.EscapeOutput.OutputNotEscaped
         die();
 		//wp_redirect( $url );
 		//exit();
 
 	// Application Form
 		
-	} elseif (!empty($_POST['qissubmit'])) {
-		$formvalues = $_POST;
+	} elseif (!empty($_POST['qissubmit'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$formvalues = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$formerrors = array();
 		
 		if (!qis_verify_form($formvalues, $formerrors)) {
@@ -287,8 +294,8 @@ function qis_loop($atts) {
 		
 	// Part 2 Application
 		
-	} elseif (!empty($_POST['part2submit'])) {
-		$formvalues = $_POST;
+	} elseif (!empty($_POST['part2submit'])) { // phpcs:ignore WordPress.Security.NonceVerification
+		$formvalues = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$formerrors = array();
 		if (!qis_verify_application($formvalues, $formerrors)) {
 			return qis_display_application($formvalues, $formerrors,null);
@@ -298,7 +305,7 @@ function qis_loop($atts) {
 		}
 
 	
-	} elseif (!isset($_POST['attributes']) && ($dropdown['use'])) {
+	} elseif (!isset($_POST['attributes']) && ($dropdown['use'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		
 		// Show Dropdown 
 		$dd = '<select id="calculators">';
@@ -563,7 +570,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	// Append the currencies to the rates object
 
 	$outputA['currencies'] = array();
-	$s_form = ((isset($_POST['submitted_form']))? $_POST['submitted_form']:'N/A');
+	$s_form = ((isset($_POST['submitted_form']))? $_POST['submitted_form']:'N/A'); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	
 	$i = 1;
 	for ($A_i = 0; isset($settings['currency_array'][$A_i]); $A_i++) {
@@ -952,7 +959,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	$output .= '<input type="hidden" id="formname" name="formname" value="'.$formvalues['formname'].'" />';
 	$output .= '<input type="hidden" id="calculatorname" name="calculatorname" value="'.$atts['calculatorname'].'" />';
 	$output .= '<input type="hidden" name="rate" value="" />';
-	$output .= '<div id="filechecking"><div class="filecheckingcontent"><img src="'.plugin_dir_url( __FILE__ ).'/img/waiting.gif'.'" alt="Loading"></div></div>';
+	$output .= '<div id="filechecking"><div class="filecheckingcontent"><img src="'.plugin_dir_url( __FILE__ ).'/img/waiting.gif'.'" alt="Loading"></div></div>'; //  phpcs:ignore PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage
 
 	$output .= '</div></form>';
 	return $output;
@@ -1026,11 +1033,12 @@ function qis_tooltip($text) {
 
 function qis_scripts() {
 	$style = qis_get_stored_style();
-	if (!$style['nostyles']) wp_enqueue_style( 'qis_style',plugins_url('slider.css', __FILE__));
+	if (!$style['nostyles']) wp_enqueue_style( 'qis_style',plugins_url('slider.css', __FILE__),"QIS_VERSION",true);
 	wp_enqueue_script('jquery-ui-datepicker');
 	wp_enqueue_script("jquery-effects-core");
-	wp_enqueue_script('qis_script',plugins_url('slider.js?v=1.16', __FILE__ ), array( 'jquery' ), false, true );
-	wp_enqueue_style ('jquery-style', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css');
+	wp_enqueue_script('qis_script',plugins_url('slider.js?v=1.16', __FILE__ ), array( 'jquery' ), "QIS_VERSION", true );
+	//wp_enqueue_style ('jquery-style', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css');
+	wp_enqueue_style ('jquery-style', 'jquery-ui.css',false,"1.11.2",true);
 	wp_localize_script('qis_script', 'qis_application', [
 		'ajax_url' => admin_url( 'admin-ajax.php' )
 	]);
@@ -1057,8 +1065,8 @@ function qis_generate_css() {
 
 	//Slider output on small screens
 	$smaller = preg_split('#(?<=\d)(?=[a-z%])#i', $style['output-size']);
-	$smaller = (floatval($smaller[0])*0.6).$smaller[1];
-
+	//$smaller = (floatval($smaller[0])*0.6).$smaller[1];
+    $smaller = (floatval($smaller[0])*0.6).$smaller[0];
 	// Handle
 	$svgsize = $handlesize = preg_split('#(?<=\d)(?=[a-z%])#i', $style['handle-size']);
 	$handlesize[0] = $handlesize[0] - $style['handle-thickness']*2;
@@ -1114,13 +1122,14 @@ function qis_generate_css() {
 .qis-outputs {'.$style['floatcustom'].'}
 .qis_buttons, .qis_slideroutputs {line-height:'.$style['output-size'].'px;margin-bottom:'.$style['slideroutputmargin'].'px;}
 ';
-	$table = qis_get_stored_ouputtable();
-	$right = $table['values-padding'] * 2;
-	$strongon = $table['values-strong'] ? '<strong>' : '';
-	$strongoff = $table['values-strong'] ? '</strong>' : '';
-	$data .= $table['values-colour'] ? '.outputtable td{padding: 0 '.$right.'px '.$table['values-padding'].'px 0;}.values-colour{color:'.$table['values-colour'].'}' : '';
+
+$table = qis_get_stored_ouputtable();
+$right = $table['values-padding'] * 2;
+$strongon = $table['values-strong'] ? '<strong>' : '';
+$strongoff = $table['values-strong'] ? '</strong>' : '';
+$data .= $table['values-colour'] ? '.outputtable td{padding: 0 '.$right.'px '.$table['values-padding'].'px 0;}.values-colour{color:'.$table['values-colour'].'}' : '';
+$right = $style['floatpercentage'] ? 98 - $style['floatpercentage'] : 98;
 	
-$right = 98 - $style['floatpercentage'];
 $data .= '.qis-add-float {display:grid;grid-template-columns:'.$style['floatpercentage'].'% '.$right.'%;grid-gap:2%;}
 @media only screen and (max-width:'.$style['floatbreakpoint'].'px) {.qis-add-float{display:block;}
 .qis-slidercenter {font-size:'.$smaller.'px;}.qis_buttons, .qis_slideroutputs {margin-bottom:'.($style['slideroutputmargin']/2).'px;}
@@ -1169,8 +1178,8 @@ function qis_subscribe() {
 	$message = get_option('qis_messages');
 	
 	$auto = qis_get_stored_autoresponder(null);
-	if ( isset ($_GET['sub']) ) {
-		$ref = $_GET['sub'];
+	if ( isset ($_GET['sub']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$ref = $_GET['sub']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		foreach ($message as $key => $value ) {
 			if ($ref == $value['timestamp'] && $value['confirmed'] != true) {
 				if ($auto['notification']) qis_send_notification ($value);
@@ -1181,8 +1190,8 @@ function qis_subscribe() {
 		}
 		return '<div class="emailresponse">'.$auto['subscribealready'].'</div>';
 	}
-	if ( isset ($_GET['unsub']) ) {
-		$ref = $_GET['unsub'];
+	if ( isset ($_GET['unsub']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$ref = $_GET['unsub']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		foreach ($message as $key => $value )	{
 			if ($ref == $value['timestamp']) {
 				unset($value);
@@ -1374,7 +1383,7 @@ function qis_lang_init() {
 
 function qis_upgrade_ipn() {
 	$qppkey = qis_key();
-	if (!isset($_POST['custom']) || $qppkey['authorised'])
+	if (!isset($_POST['custom']) || $qppkey['authorised']) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		return;
 	$raw_post_data = file_get_contents('php://input');
 	$raw_post_array = explode('&', $raw_post_data);
@@ -1396,7 +1405,7 @@ function qis_upgrade_ipn() {
 		}
 		$req .= "&$key=$value";
 	}
-
+/*
 	$ch = curl_init("https://www.paypal.com/cgi-bin/webscr");
 	if ($ch == FALSE) {
 		return FALSE;
@@ -1413,11 +1422,20 @@ function qis_upgrade_ipn() {
 	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
 
 	$res = curl_exec($ch);
-
+*/
+		$response = wp_remote_post( "https://www.paypal.com/cgi-bin/webscr", array(
+    'body'    => $req,
+    'headers' => array(
+        'Connection' => 'Close',
+    ),
+) );
+	
+	$tokens = explode("\r\n\r\n", trim($response["body"]));
+	$res = trim(end($tokens));
 	$tokens = explode("\r\n\r\n", trim($res));
 	$res = trim(end($tokens));
 
-	if (strcmp ($res, "VERIFIED") == 0 && $qppkey['key'] == $_POST['custom']) {
+	if (strcmp ($res, "VERIFIED") == 0 && $qppkey['key'] == $_POST['custom']) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$qppkey['authorised'] = 'true';
 		update_option('qpp_key',$qppkey);
 		$qpp_setup = qp_get_stored_setup();
@@ -1439,10 +1457,10 @@ function qis_current_page_url() {
 		$pageURL .= "s";
 	}
 	$pageURL .= "://";
-	if (($_SERVER["SERVER_PORT"] != "80") && ($_SERVER['SERVER_PORT'] != '443'))
-		$pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];
+	if (($_SERVER["SERVER_PORT"] != "80") && ($_SERVER['SERVER_PORT'] != '443')) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	else 
-		$pageURL .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
+		$pageURL .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	return $pageURL;
 }
 

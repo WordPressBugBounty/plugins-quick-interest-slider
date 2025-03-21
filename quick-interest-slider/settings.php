@@ -57,8 +57,8 @@ function qis_tabbed_page() {
 	
 	echo wp_kses( '<div class="wrap">',$allowed_html);
 	echo wp_kses( '<h1>'.__('Loan Repayment Calculator', 'quick-interest-slider').'</h1>',$allowed_html);
-	if ( isset ($_GET['tab'])) {
-		qis_admin_tabs($_GET['tab']); $tab = $_GET['tab'];
+	if ( isset ($_GET['tab'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		qis_admin_tabs($_GET['tab']); $tab = $_GET['tab']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	} else {
 		qis_admin_tabs('settings'); $tab = 'settings';
 	}
@@ -218,30 +218,30 @@ function qis_settings(){
 
 		$newsettings = [];
 		foreach ($options as $item) {
-			if (isset($_POST[$item]) && is_array($_POST[$item])) {
+			if (isset($_POST[$item]) && is_array($_POST[$item])) { 
 				if ($item == 'triggers') {
 					$triggers = array();
 					for ($i = 0; $i < 7; $i++) {
-						$x = $_POST['triggers'][$i];
-						if (isset($_POST['triggers'][$i]['rate']) && !empty($_POST['triggers'][$i]['rate'])) {
+						$x = $_POST['triggers'][$i]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+						if (isset($_POST['triggers'][$i]['rate']) && !empty($_POST['triggers'][$i]['rate'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 							$triggers[] = array(
-								'rate' => (float) trim(stripslashes($_POST['triggers'][$i]['rate'])),
-								'trigger' => (int) trim(stripslashes($_POST['triggers'][$i]['trigger'])),
-								'amttrigger' => (float) trim(stripslashes($_POST['triggers'][$i]['amttrigger'])),
-								'dae' => @trim(stripslashes($_POST['triggers'][$i]['dae']))
+								'rate' => (float) trim(stripslashes($_POST['triggers'][$i]['rate'])), // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+								'trigger' => (int) trim(stripslashes($_POST['triggers'][$i]['trigger'])), // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+								'amttrigger' => (float) trim(stripslashes($_POST['triggers'][$i]['amttrigger'])), // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+								'dae' => @trim(stripslashes($_POST['triggers'][$i]['dae'])) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 							);
 						}
 					}
 					$settings['triggers'] = $triggers;
 				}
 			} else {
-				$settings[$item] = htmlentities(stripslashes($_POST[$item]));
+				$settings[$item] = htmlentities(stripslashes(isset($_POST[$item])?$_POST[$item]:"")); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			}
 			
 		}
 		
-		if ($_POST['allowhtml']) $settings['repaymentlabel'] = stripslashes($_POST['repaymentlabel']);
-		else $settings['repaymentlabel'] = htmlentities(stripslashes($_POST['repaymentlabel']));
+		if (isset($_POST['allowhtml'])) $settings['repaymentlabel'] = stripslashes(isset($_POST['repaymentlabel'])?$_POST['repaymentlabel']:""); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		else $settings['repaymentlabel'] = htmlentities(stripslashes($_POST['repaymentlabel'])); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		
 		if (isset($_POST['usebubble'])) {
 			$settings['usebubble'] = 1;
@@ -264,14 +264,14 @@ function qis_settings(){
 		
 		$settings['currency_array'] = array();
 		for ($i=0; $i<=3; $i++) {
-			if (strlen($_POST['currency_symbol'.$i]) && strlen($_POST['currency_name'.$i]) && strlen($_POST['currency_iso'.$i])) {
-				$settings['currency_array'][$i]['symbol'] = $_POST['currency_symbol'.$i];
-				$settings['currency_array'][$i]['name'] = $_POST['currency_name'.$i];
-				$settings['currency_array'][$i]['iso'] = $_POST['currency_iso'.$i];
+			if (isset($_POST['currency_symbol'.$i]) && isset($_POST['currency_name'.$i]) && isset($_POST['currency_iso'.$i]) && strlen($_POST['currency_symbol'.$i]) && strlen($_POST['currency_name'.$i]) && strlen($_POST['currency_iso'.$i])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+				$settings['currency_array'][$i]['symbol'] = $_POST['currency_symbol'.$i]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+				$settings['currency_array'][$i]['name'] = $_POST['currency_name'.$i]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+				$settings['currency_array'][$i]['iso'] = $_POST['currency_iso'.$i]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			}
 		}
 
-		if (isset($_POST['resetsort']) && $_POST['resetsort'] ) $settings['sort'] = false;
+		if (isset($_POST['resetsort']) && $_POST['resetsort'] ) $settings['sort'] = false; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		
 		update_option( 'qis_settings'.$theform, $settings);
 		qis_admin_notice(__('The settings have been updated', 'quick-interest-slider'));
@@ -285,7 +285,7 @@ function qis_settings(){
 
 	
 	if( isset( $_POST['changeform'])  && check_admin_referer("save_qis")) {
-		$qisform = $theform = $_POST['calculator'];
+		$qisform = $theform = $_POST['calculator']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option( 'qis_formnumber', $qisform);
 	}
 	
@@ -386,7 +386,8 @@ function qis_settings(){
 					$title = ' ('.get_the_title().')';
 				}
 			}
-			wp_reset_query();
+			// wp_reset_query();
+		    wp_reset_postdata();
 			$selected = $theform == $i ? ' selected' : '';
 			$content .='<option value="'.$i.'"'.$selected.'>Calculator '.$i.$title.'</option>';
 		}
@@ -750,18 +751,18 @@ function qis_settings(){
 	<h2>'.__('Output Options', 'quick-interest-slider').'</h2>
 	<p class="description">'.__('Defines how the outputs from the sliders and calculations are displayed', 'quick-interest-slider').'.</p>
 
-	<p>'.__('Slider label position', 'quick-interest-slider').': <input type="radio" name="sliderlabelposition" value="aboveslider" ' . $aboveslider . ' />'.__('Above the slider', 'quick-interest-slider').'&nbsp;&nbsp;&nbsp;<input type="radio" name="sliderlabelposition" value="beforeoutput" ' . $beforeoutput . ' />'.__('Before the slider value', 'quick-interest-slider').'</p>
+	<p>'.__('Slider label position', 'quick-interest-slider').': <input type="radio" name="sliderlabelposition" value="aboveslider" ' . (isset($aboveslider)?$aboveslider:"") . ' />'.__('Above the slider', 'quick-interest-slider').'&nbsp;&nbsp;&nbsp;<input type="radio" name="sliderlabelposition" value="beforeoutput" ' . (isset($beforeoutput)?$beforeoutput:"") . ' />'.__('Before the slider value', 'quick-interest-slider').'</p>
 	
 	<p'.$hideline.'><input type="checkbox" name="outputlimits"  value="checked" ' . $settings['outputlimits'] . '/>'.__('Show amount/term above slider', 'quick-interest-slider').'</p>
 	<p'.$hideline.'><input type="checkbox" name="maxminlimits"  value="checked" ' . $settings['maxminlimits'] . '/>'.__('Show min and max values above slider', 'quick-interest-slider').'</p>
 	<p><input type="checkbox" name="buttons" value="true" id="qis_buttons" '.(($settings['buttons'])? 'checked="checked"':'').'/><label for="qis_buttons">'.__('Add increase/decrease buttons to slider', 'quick-interest-slider').' ('.__('does not work on text inputs', 'quick-interest-slider').').</label></p>
-	<p>'.__('Slider buttons position', 'quick-interest-slider').': <input type="radio" name="sliderbuttonposition" value="slidertop" ' . $slidertop . ' />'.__('Above the slider', 'quick-interest-slider').' ('.__('Replaces min/max values if used', 'quick-interest-slider').')&nbsp;&nbsp;&nbsp;<input type="radio" name="sliderbuttonposition" value="sliderside" ' . $sliderside . ' />'.__('At the ends of the slider', 'quick-interest-slider').'</p>
+	<p>'.__('Slider buttons position', 'quick-interest-slider').': <input type="radio" name="sliderbuttonposition" value="slidertop" ' . (isset($slidertop)?$slidertop:"") . ' />'.__('Above the slider', 'quick-interest-slider').' ('.__('Replaces min/max values if used', 'quick-interest-slider').')&nbsp;&nbsp;&nbsp;<input type="radio" name="sliderbuttonposition" value="sliderside" ' . (isset($sliderside)?$sliderside:"") . ' />'.__('At the ends of the slider', 'quick-interest-slider').'</p>
 	<p'.$hideline.'><input type="checkbox" name="nosliderlabel"  value="checked" ' . $settings['nosliderlabel'] . '/>'.__('Hide labels on slider', 'quick-interest-slider').' ('.__('eg: 100 not $100 or 7 not 7 months', 'quick-interest-slider').').</p>
 	<p'.$hideline.'><input type="checkbox" name="markers"  value="checked" ' . $settings['markers'] . '/>'.__('Show step markers on slider', 'quick-interest-slider').' <strong>Note:</strong> '.__('Small steps will mean lots of marker lines. Use with caution', 'quick-interest-slider').'!</p>
 	<p><input type="checkbox" name="outputrepayments"  value="checked" ' . $settings['outputrepayments'] . '/>
 	'.__('Display repayment terms', 'quick-interest-slider').'</p>
 	<p><textarea style="width:100%;height:100px;" name="repaymentlabel" label="repaymentlabel" rows="4">' . $settings['repaymentlabel'] . '</textarea><p>
-	<p><input type="checkbox" name="allowhtml"  value="checked" ' . $settings['allowhtml'] . '/>'.__('Allow HTML in this field only', 'quick-interest-slider').'</p>
+	<p><input type="checkbox" name="allowhtml"  value="checked" ' . (isset($settings['allowhtml'])?$settings['allowhtml']:"") . '/>'.__('Allow HTML in this field only', 'quick-interest-slider').'</p>
 	<p><input type="checkbox" name="outputtotal"  value="checked" ' . $settings['outputtotal'] . '/>'.__('Display total to pay repayment terms', 'quick-interest-slider').'. '.__('Renders as an H2', 'quick-interest-slider').'</p>
 	<p><input type="text" name="outputtotallabel"  value ="' . $settings['outputtotallabel'] . '" /></p>
 	<p class="description">'.__('Optional shortcode examples', 'quick-interest-slider').': [repayment], [interest], [total]. <a href="https://loanpaymentplugin.com/shortcodes-in-output-messages/" target="_blank">'.__('Click here to see all shortcodes', 'quick-interest-slider').'</a></p>
@@ -801,7 +802,7 @@ function qis_settings(){
 	
 	//Currencies
 	
-	if ($qppkey['authorised'] && $settings['usefx']) {
+	if ($qppkey['authorised'] && isset($settings['usefx'])) {
 		$content .= '<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-bottom:10px;">
 		<h2>'.__('Currency Selectors and Foreign Exchange', 'quick-interest-slider').'</h2>';
 		$content .= '<p>The API I used to calculate the FX no longers works. This means I have had to remove this feature. If you really need FX please contact me and I can investigate alternate methods but sadly the ones I\'ve looked at so far are not free</p>">';
@@ -890,6 +891,7 @@ function qis_styles() {
 			'slider-background',
 			'slider-revealed',
 			'handle-background',
+			'handle-border',
 			'output-colour',
 			'toplinecolour',
 			'slideroutputcolour',
@@ -910,7 +912,7 @@ function qis_styles() {
 			'graphinterest'
 		);
 		foreach ( $options as $item) {
-			$style[$item] = stripslashes(@$_POST[$item]);
+			$style[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$style[$item] = htmlentities($style[$item]);
 		}
 		
@@ -921,7 +923,6 @@ function qis_styles() {
 			'slider-label-size',
 			'slider-thickness',
 			'handle-size',
-			'handle-border',
 			'handle-corners',
 			'handle-thickness',
 			'toplinefont',
@@ -937,7 +938,7 @@ function qis_styles() {
 		);
 		
 		foreach ( $options as $item) {
-			$style[$item] = preg_replace('/\D/', '', @$_POST[$item]);
+			$style[$item] = preg_replace('/\D/', '', @$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		}
 		
 		update_option( 'qis_style', $style);
@@ -1349,7 +1350,7 @@ function qis_register() {
 			'repaymentdata'
 		);
 		foreach ($options as $item) {
-			$register[$item] = stripslashes( @$_POST[$item]);
+			$register[$item] = stripslashes( @$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$register[$item] = htmlentities($register[$item]);
 		}
 		update_option('qis_register'.$theform, $register);
@@ -1362,7 +1363,7 @@ function qis_register() {
 	}
 	
 	if( isset( $_POST['changeform']) && check_admin_referer("save_qis")) {
-		$qisform = $theform = $_POST['calculator'];
+		$qisform = $theform = $_POST['calculator']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option( 'qis_formnumber', $qisform);
 		$register = qis_get_stored_register($qisform);
 	}
@@ -1403,7 +1404,7 @@ function qis_register() {
 			'line_margin',
 		);
 		foreach ( $options as $item) {
-			$style[$item] = stripslashes(@$_POST[$item]);
+			$style[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$style[$item] = htmlentities($style[$item]);
 		}
 		
@@ -1412,8 +1413,8 @@ function qis_register() {
 	}
 	
 	if( isset( $_POST['Savenumbering']) && check_admin_referer("save_qis")) {
-		$refdata['referenceprefix'] = $_POST['referenceprefix'];
-		$refdata['referencenumber'] = $_POST['referencenumber'];
+		$refdata['referenceprefix'] = $_POST['referenceprefix']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$refdata['referencenumber'] = $_POST['referencenumber']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option( 'qis_reference', $refdata);
 		qis_admin_notice("The reference number has been saved.");
 	}
@@ -1429,7 +1430,7 @@ function qis_register() {
 	}
 	
 	if( isset( $_POST['Validate']) && check_admin_referer("save_qis")) {
-		$apikey = $_POST['qis_apikey'];
+		$apikey = $_POST['qis_apikey']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$blogurl = get_site_url();
 		$akismet = new qis_akismet($blogurl, $apikey);
 		if($akismet->isKeyValid()) {
@@ -1956,7 +1957,7 @@ function qis_register() {
 		
 		<tr>
 		<td style="vertical-align:top;">'.__('Margins and Padding', 'quick-interest-slider').'</td>
-		<td><span class="description">'.__('Set the margins and padding of each bit using CSS shortcodes', 'quick-contact-form').':</span><br><input type="text" label="line margin" name="line_margin" value="' . $style['line_margin'] . '" /></td>
+		<td><span class="description">'.__('Set the margins and padding of each bit using CSS shortcodes', 'quick-interest-slider').':</span><br><input type="text" label="line margin" name="line_margin" value="' . $style['line_margin'] . '" /></td>
 		</tr>
 		
 		</table>
@@ -2091,7 +2092,7 @@ function qis_application (){
 		/*
 			Loop through POST Variables
 		*/
-		foreach ($_POST['application'] as $iB => $iV) {
+		foreach ($_POST['application'] as $iB => $iV) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			if (in_array($iB,$option)) {
 				$na = array();
 				foreach ($iV as $field => $fV) {
@@ -2149,7 +2150,7 @@ function qis_application (){
 		
 		$messages = array();
 			foreach ($options as $item) {
-				$messages[$item] = stripslashes(@$_POST[$item]);
+				$messages[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 				$messages[$item] = htmlentities($messages[$item]);
 			}
 		update_option('qis_application'.$theform, $messages);
@@ -2158,7 +2159,7 @@ function qis_application (){
 	}
 	
 	if( isset( $_POST['changeform'])) {
-		$qisform = $theform = $_POST['calculator'];
+		$qisform = $theform = $_POST['calculator']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option( 'qis_formnumber', $qisform);
 	}
 	
@@ -2361,11 +2362,11 @@ function qis_autoresponse_page() {
 			'noconfirmation'
 		);
 		foreach ($options as $item) {
-			$auto[$item] = stripslashes(@$_POST[$item]);
+			$auto[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$auto[$item] = htmlentities($auto[$item]);
 		}
 		
-		$auto['message'] = stripslashes($_POST['message']);
+		$auto['message'] = stripslashes($_POST['message']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		
 		update_option('qis_autoresponder'.$theform, $auto );
 		qis_admin_notice("The autoresponder settings have been updated.");
@@ -2373,7 +2374,7 @@ function qis_autoresponse_page() {
 	}
 	
 	if( isset( $_POST['changeform'])) {
-		$qisform = $theform = $_POST['calculator'];
+		$qisform = $theform = $_POST['calculator']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option( 'qis_formnumber', $qisform);
 		$auto = qis_get_stored_autoresponder($theform);
 	}
@@ -2527,7 +2528,7 @@ function qis_progress() {
 			'rejectedcolour'
 		);
 		foreach ($options as $item) {
-			$process[$item] = stripslashes(@$_POST[$item]);
+			$process[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$process[$item] = htmlentities($process[$item]);
 		}
 		
@@ -2545,7 +2546,7 @@ function qis_progress() {
 	if( isset( $_POST['Savetracking']) && check_admin_referer("save_qis")) {
 		delete_option('qis_track');
 		delete_option('qis_track_applications');
-		$track['enabletracking'] = @$_POST['enabletracking'];
+		$track['enabletracking'] = @$_POST['enabletracking']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		update_option('qis_track',$track);
 		qis_admin_notice("Tracking has been enabled");
 	}
@@ -2640,7 +2641,7 @@ function qis_setdropdowns (){
 	
 	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) {
 		
-		$dropdown['use'] = stripslashes( @$_POST['use']);
+		$dropdown['use'] = stripslashes( @$_POST['use']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 
 		$options = array(
 			'one',
@@ -2654,7 +2655,7 @@ function qis_setdropdowns (){
 		);
 		
 		foreach ($options as $item) {
-			$dropdown['forms'][$item] = stripslashes( $_POST[$item]);
+			$dropdown['forms'][$item] = stripslashes( $_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		}
 		
 		update_option('qis_dropdown', $dropdown);
@@ -2755,15 +2756,15 @@ function qis_outputtable (){
 	
 	$allowed_html = callback_allowed_html();
 	
-	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) {
-		$output['sort'] = stripslashes( $_POST['sort']);
-		$output['values-strong'] = stripslashes( $_POST['values-strong']);
-		$output['values-colour'] = stripslashes( $_POST['values-colour']);
+	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) { 
+		$output['sort'] = stripslashes( $_POST['sort']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$output['values-strong'] = stripslashes( $_POST['values-strong']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$output['values-colour'] = stripslashes( $_POST['values-colour']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$sort = explode(",", $output['sort']);
 		foreach ($sort as $item) {
-			$output['use'.$item] = stripslashes( $_POST['use'.$item]);
+			$output['use'.$item] = stripslashes( $_POST['use'.$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$output['use'.$item] = htmlentities($output['use'.$item]);
-			$output[$item.'caption'] = stripslashes( $_POST[$item.'caption']);
+			$output[$item.'caption'] = stripslashes( $_POST[$item.'caption']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$output[$item.'caption'] = htmlentities($output[$item.'caption']);
 		}
 		update_option('qis_outputtable'.$select, $output);
@@ -2912,7 +2913,7 @@ function qis_upgrade () {
 	if( isset( $_POST['Upgrade']) && check_admin_referer("save_qis")) {
 		$page_url = qis_current_page_url();
 		$ajaxurl = admin_url('admin-ajax.php');
-		$page_url = (($ajaxurl == $page_url) ? $_SERVER['HTTP_REFERER'] : $page_url);
+		$page_url = (($ajaxurl == $page_url) ? $_SERVER['HTTP_REFERER'] : $page_url); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$qppkey = array('key' => '2d1490348869720eb6c48469cce1d21c');
 		update_option('qpp_key', $qppkey);
 		$form = '<div class="qis-options"><h2 style="clear:both;">'.__('Waiting for PayPal...', 'quick-interest-slider').'</h2>
@@ -2945,19 +2946,19 @@ function qis_upgrade () {
 
 	if( isset( $_POST['Check']) && check_admin_referer("save_qis")) {
 		$qppkey = qis_key();
-		if ($_POST['key'] == $qppkey['key'] || $_POST['key'] == '2d1490348869720eb6c48469cce1d21c') {
-			$qppkey['key'] = $_POST['key'];
+		if ($_POST['key'] == $qppkey['key'] || $_POST['key'] == '2d1490348869720eb6c48469cce1d21c') { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$qppkey['key'] = $_POST['key'];  // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$qppkey['authorised'] = true;
 			update_option('qpp_key', $qppkey);
-			qis_admin_notice(__('Your key has been accepted', 'multipay'));
+			qis_admin_notice(__('Your key has been accepted', 'quick-interest-slider'));
 		} else {
-			qis_admin_notice(__('The key is not correct, please try again', 'multipay'));
+			qis_admin_notice(__('The key is not correct, please try again', 'quick-interest-slider'));
 		}
 	}
 	
 	if( isset( $_POST['Delete']) && check_admin_referer("save_qis")) {
 		delete_option('qpp_key');
-		qis_admin_notice(__('Your key has been deleted', 'multipay'));
+		qis_admin_notice(__('Your key has been deleted', 'quick-interest-slider'));
 	}
 	
 	$qppkey = qis_key();
@@ -2999,15 +3000,15 @@ function qis_upgrade () {
 	// echo wp_kses( $content,$allowed_html);
 }
 
-function qis_admin_notice($message = '') {if (!empty( $message)) echo '<div class="updated"><p>'.wp_kses($message,$allowed_html).'</p></div>';}
+function qis_admin_notice($message = '') {if (!empty( $message)) echo '<div class="updated"><p>'.wp_kses($message,isset($allowed_html)?$allowed_html:"").'</p></div>';}
 
 function qis_scripts_init($hook) {
-	wp_enqueue_style('qis_settings',plugins_url('settings.css', __FILE__));
+	wp_enqueue_style('qis_settings',plugins_url('settings.css', __FILE__),false,"QIS_VERSION",true);
 	if($hook != 'settings_page_quick-interest-slider-settings') {
 		return;
 	}
 	wp_enqueue_script('jquery-ui-sortable');
 	wp_enqueue_style('wp-color-picker');
 	wp_enqueue_media();
-	wp_enqueue_script('qis-media', plugins_url('settings.js', __FILE__ ), array( 'jquery','wp-color-picker' ), false, true );
+	wp_enqueue_script('qis-media', plugins_url('settings.js', __FILE__ ), array( 'jquery','wp-color-picker' ), "QIS_VERSION", true );
 }

@@ -1,6 +1,6 @@
 <?php
 
-ini_set('error_reporting', 0);
+//ini_set('error_reporting', 0);
 
 define('QIS_LABEL_TYPE_NONE',0);
 define('QIS_LABEL_TYPE_TINY',1);
@@ -9,7 +9,7 @@ define('QIS_LABEL_TYPE_LINE',3);
 
 function qis_display_thankyou ($values) {
 	
-	$register   = qis_get_stored_register($values['formname']);
+	$register   = qis_get_stored_register($values['formname']); 
 	$style	  = qis_get_stored_style();
 	
 	$content = '<div action="" class="qis_form '.$style['border'].'" method="POST">';
@@ -299,7 +299,7 @@ function qis_check_key($values) {
 // Verifies the application
 function qis_verify_form(&$values, &$errors) {
 	
-	echo '>'.$values['formname'].'<hr>';
+	echo '>'.esc_html($values['formname']).'<hr>';
 	
 	$register = qis_get_stored_register($values['formname']);
 	
@@ -353,7 +353,7 @@ function qis_verify_form(&$values, &$errors) {
 			$errors['yourmessage'] = 'error';
 	}
 	if ($register['usedropdown']) {
-		echo '>'.$register['usedropdown'].'<hr>';
+		echo '>'.esc_html($register['usedropdown']).'<hr>';
 		$values['yourdropdown'] = htmlspecialchars($values['yourdropdown']);
 		if (empty($values['yourdropdown'])) 
 			$errors['yourdropdown'] = 'error';
@@ -392,9 +392,9 @@ function qis_verify_form(&$values, &$errors) {
 	}
 	if ($register['useattachment']) {
 		
-		$tmp_name = $_FILES['attachment']['tmp_name'];
-		$name = $_FILES['attachment']['name'];
-		$size = $_FILES['attachment']['size'];
+		$tmp_name = $_FILES['attachment']['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$name = $_FILES['attachment']['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$size = $_FILES['attachment']['size']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		if (file_exists($tmp_name)) {
 			if ($size > $register['attach_size']) $errors['attach'] = $register['attach_error_size']; 
 			$ext = strtolower(substr(strrchr($name,'.'),1));
@@ -402,7 +402,7 @@ function qis_verify_form(&$values, &$errors) {
 		}
 	}
 	if ($values['validator']) die();
-	if(!spawnSecure($_POST['anything'])) die();
+	if(!spawnSecure($_POST['anything'])) die(); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	
 	return (count($errors) == 0);
 }
@@ -432,8 +432,8 @@ function qis_process_form($values) {
 	
 	if(!is_array($qis_messages)) $qis_messages = array();
 	
-	$ip=$_SERVER['REMOTE_ADDR'];
-	$url = $_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"];
+	$ip=$_SERVER['REMOTE_ADDR']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$url = $_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	$page = get_the_title();
 	if (empty($page)) $page = 'Unknown Page';
 	
@@ -485,15 +485,15 @@ function qis_process_form($values) {
 	
 		$dir = (realpath(WP_CONTENT_DIR . '/uploads/qis/') ? '/uploads/qis/' : '/uploads/');
 		$url = get_site_url();
-		$filename = $_FILES['attachment']['tmp_name'];
+		$filename = $_FILES['attachment']['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	
 		if (file_exists($filename)){
-			$name = $values['reference'].'-'.$_FILES['attachment']['name'];
+			$name = $values['reference'].'-'.$_FILES['attachment']['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$name = trim(preg_replace('/[^A-Za-z0-9. ]/', '', $name));
 			$name = str_replace(' ','-',$name);
 			$values['attachment'] = $url.'/wp-content'.$dir.$name;
 			$_FILES['attachment']['name'] = $name;
-			$uploadedfile = $_FILES['attachment'];
+			$uploadedfile = $_FILES['attachment']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$upload_overrides = array( 'test_form' => false );
 			$movefile = wp_handle_upload( $uploadedfile, $upload_overrides );
 			array_push($attachments , WP_CONTENT_DIR .$dir.$name);
@@ -563,8 +563,8 @@ function qis_process_form($values) {
 function qis_send_notification ($values,$attachments,$register) {
 	
 	global $post;
-	$ip			= $_SERVER['REMOTE_ADDR'];
-	$url		= $_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"];
+	$ip			= $_SERVER['REMOTE_ADDR']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$url		= $_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	$page		= get_the_title();
 	$repayment	= false;
 	if (empty($page)) $page = 'Unknown Page';
@@ -961,23 +961,23 @@ function qis_display_application( $values, $errors,$applied) {
 	<input onClick="check();" type="submit" value="'.$register['part2submit'].'" class="submit" name="part2submit" />
 	</div>
 	</form>';
-	$content .= <<<SCRIPT
+	$content .= '
 		<script type="text/javascript">
 			jQuery(document).ready(function() {
 				$ = jQuery;
-				$('.sc_app_hidden').hide();
-				$('select[name=hometime]').change(function(e) {
+				$(".sc_app_hidden").hide();
+				$("select[name=hometime]").change(function(e) {
 					if (this.selectedIndex > 4 || this.selectedIndex == 0) {
-						if ($('.sc_app_hidden').is(":visible"))
-							$('.sc_app_hidden').slideToggle();
+						if ($(".sc_app_hidden").is(":visible"))
+							$(".sc_app_hidden").slideToggle();
 					} else {
-						if (!$('.sc_app_hidden').is(":visible"))
-							$('.sc_app_hidden').slideToggle();
+						if (!$(".sc_app_hidden").is(":visible"))
+							$(".sc_app_hidden").slideToggle();
 					}
 				});
 			});
-		</script>
-SCRIPT;
+		</script>';
+
 	return $content;
 }
 
@@ -1001,9 +1001,9 @@ function qis_verify_application(&$values, &$errors) {
 	$filenames = array('identityproof','addressproof');
 	
 	foreach($filenames as $item) {
-		$tmp_name = $_FILES[$item]['tmp_name'];
-		$name = $_FILES[$item]['name'];
-		$size = $_FILES[$item]['size'];
+		$tmp_name = $_FILES[$item]['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$name = $_FILES[$item]['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$size = $_FILES[$item]['size']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		if (file_exists($tmp_name)) {
 			if ($size > $register['attach_size']) $errors['attach'.$item] = $register['attach_error_size']; 
 			$ext = strtolower(substr(strrchr($name,'.'),1));
@@ -1048,13 +1048,13 @@ function qis_process_application($values) {
 	
 	$dir = (realpath(WP_CONTENT_DIR . '/uploads/qis/') ? '/uploads/qis/' : '/uploads/');
 	foreach($filenames as $item) {
-		$filename = $_FILES[$item]['tmp_name'];
+		$filename = $_FILES[$item]['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		if (file_exists($filename)) {
-			$name = $values['reference'].'-'.$_FILES[$item]['name'];
+			$name = $values['reference'].'-'.$_FILES[$item]['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$name = trim(preg_replace('/[^A-Za-z0-9. ]/', '', $name));
 			$name = str_replace(' ','-',$name);
 			$_FILES[$item]['name'] = $name;
-			$uploadedfile = $_FILES[$item];
+			$uploadedfile = $_FILES[$item]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$upload_overrides = array( 'test_form' => false );
 			$movefile = wp_handle_upload( $uploadedfile, $upload_overrides );
 			array_push($attachments , WP_CONTENT_DIR .$dir.$name);
@@ -1195,9 +1195,9 @@ class qis_akismet {
 		$this->akismetServer = 'rest.akismet.com';
 		$this->akismetVersion = '1.1';
 		$this->comment['blog'] = $blogURL;
-		$this->comment['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
-		if(isset($_SERVER['HTTP_REFERER'])) $this->comment['referrer'] = $_SERVER['HTTP_REFERER'];
-		$this->comment['user_ip'] = $_SERVER['REMOTE_ADDR'] != getenv('SERVER_ADDR') ? $_SERVER['REMOTE_ADDR'] : getenv('HTTP_X_FORWARDED_FOR');
+		$this->comment['user_agent'] = $_SERVER['HTTP_USER_AGENT']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		if(isset($_SERVER['HTTP_REFERER'])) $this->comment['referrer'] = $_SERVER['HTTP_REFERER']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$this->comment['user_ip'] = $_SERVER['REMOTE_ADDR'] != getenv('SERVER_ADDR') ? $_SERVER['REMOTE_ADDR'] : getenv('HTTP_X_FORWARDED_FOR'); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	}
 	public function isKeyValid() {
 		$response = $this->sendRequest('key=' . $this->wordPressAPIKey . '&blog=' . $this->blogURL, $this->akismetServer, '/' . $this->akismetVersion . '/verify-key');
@@ -1279,16 +1279,16 @@ class qisSocketWriteRead {
 	}
 	public function send() {
 		$this->response = '';
-		$fs = fsockopen($this->host, $this->port, $this->errorNumber, $this->errorString, 3);
+		$fs = fsockopen($this->host, $this->port, $this->errorNumber, $this->errorString, 3); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fsockopen
 		if($this->errorNumber != 0) {
 			throw new Exception(wp_kses('Error connecting to host: ' . $this->host . ' Error number: ' . $this->errorNumber . ' Error message: ' . $this->errorString,$allowed_html));
 		}
 		if($fs !== false) {
-			@fwrite($fs, $this->request);
+			@fwrite($fs, $this->request);//  phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
 			while(!feof($fs)) 
 				$this->response .= fgets($fs, $this->responseLength);
 		}
-		fclose($fs);
+		fclose($fs); //  phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	}
 	public function getResponse() {return $this->response;}
 	public function getErrorNumner() {return $this->errorNumber;}

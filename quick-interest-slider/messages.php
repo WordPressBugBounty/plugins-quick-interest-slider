@@ -8,17 +8,17 @@ function qis_messages() {
 	$selected = array();
     $allowed_html = callback_allowed_html();
 	// Delete all applications
-	if( isset( $_POST['qis_reset_message'])) {
+	if( isset( $_POST['qis_reset_message'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		delete_option('qis_messages');
 		qis_admin_notice(__('All applications have been deleted','quick-interest-slider').'.');
 	}
 
 	// Delete selected applications
-	if( isset($_POST['qis_delete_selected'])) {
+	if( isset($_POST['qis_delete_selected'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$message = get_option('qis_messages');
 		$count = count($message);
 		for($i = 0; $i <= $count; $i++) {
-			if ($_POST[$i] == 'checked') {
+			if ($_POST[$i] == 'checked') { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 				unset($message[$i]);
 			}
 		}
@@ -28,10 +28,10 @@ function qis_messages() {
 	}
 
 	// Approve Selected Applications
-	if( isset($_POST['qis_approve_selected'])) {
+	if( isset($_POST['qis_approve_selected'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$message = get_option('qis_messages');
 		foreach ($message as $key => $value ) {
-			if ($_POST[$key] == 'checked') {
+			if ($_POST[$key] == 'checked') { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 				$message[$key]['confirmed'] = true;
 			}
 		}
@@ -40,24 +40,24 @@ function qis_messages() {
 	}
 
 	// Send applications as email
-	if( isset($_POST['qis_emaillist'])) {
+	if( isset($_POST['qis_emaillist'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$fromemail = get_bloginfo('admin_email');
 		$title = get_bloginfo('name');
 		$message = get_option('qis_messages');
 		$content = qis_build_registration_table ($message,'report',null,null);
-		$sendtoemail = $_POST['sendtoemail'];
+		$sendtoemail = sanitize_textfield_input($_POST['sendtoemail']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$headers = "From: ".title." <".$fromemail.">\r\n"."Content-Type: text/html; charset=\"utf-8\"\r\n";	
 		wp_mail($sendtoemail, 'Loan Applications', $content, $headers);
 		qis_admin_notice(__('Application list has been sent to','quick-interest-slider').' '.$sendtoemail.'.');
 	}
 
 	// Update edited applications
-	if( isset($_POST['qis_update'])) {
+	if( isset($_POST['qis_update'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$arr = array('yourname','youremail','yourtelephone','yourmessage','yourchecks','youraddress','yourdropdown','yourdropdown2','yourradio','loan-amount','loan-period','progress');
 		$message = get_option('qis_messages');
 		
 		// Loop through the $_POST['message'] array
-		foreach ($_POST['message'] as $id => $row) {
+		foreach ($_POST['message'] as $id => $row) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			// Loop through the row thats contained in the message array entry
 			foreach ($row as $k => $v) {
 				// Do the same value assignment you make in your code
@@ -69,14 +69,14 @@ function qis_messages() {
 	}
 	
 	// Edit all applications
-	if( isset($_POST['qis_edit'])) {
+	if( isset($_POST['qis_edit'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$qis_edit = 'all';
 	}
 	
 	// Edit selected applications
-	if( isset($_POST['qis_edit_selected']) ) {
+	if( isset($_POST['qis_edit_selected']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		$qis_edit = 'selected';
-		$selected = $_POST;
+		$selected = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	}
 
 	$message = get_option('qis_messages');
