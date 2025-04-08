@@ -32,10 +32,7 @@ jQuery(document).ready(function($){
 	
 	$selector = $('#chkCurrency,#chkFX');
 	
-	console.log('>'.$selector);
-	
 	$selector.change(function() {
-		console.log('here');
 		if ($selector.is(':checked')) $("#showCurrencies").show("slow");
 		else {
 			$("#showCurrencies").hide("slow");

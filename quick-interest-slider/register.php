@@ -299,8 +299,6 @@ function qis_check_key($values) {
 // Verifies the application
 function qis_verify_form(&$values, &$errors) {
 	
-	echo '>'.esc_html($values['formname']).'<hr>';
-	
 	$register = qis_get_stored_register($values['formname']);
 	
 	if ($register['blockduplicates']) {
@@ -353,7 +351,6 @@ function qis_verify_form(&$values, &$errors) {
 			$errors['yourmessage'] = 'error';
 	}
 	if ($register['usedropdown']) {
-		echo '>'.esc_html($register['usedropdown']).'<hr>';
 		$values['yourdropdown'] = htmlspecialchars($values['yourdropdown']);
 		if (empty($values['yourdropdown'])) 
 			$errors['yourdropdown'] = 'error';
@@ -417,7 +414,7 @@ function spawnSecure($var) {
 function qis_process_form($values) {
 	global $post;
 	$content='';
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	$register = qis_get_stored_register($values['formname']);
 
 	$formnumber = $values['formname'];

@@ -18,7 +18,7 @@ function qis_admin_tabs($current = 'settings') {
 	
 	$application = qis_get_stored_application_messages(1);
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	if ($application['enable']) {
 		$tabs = array(
@@ -53,7 +53,7 @@ function qis_admin_tabs($current = 'settings') {
 
 function qis_tabbed_page() {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	echo wp_kses( '<div class="wrap">',$allowed_html);
 	echo wp_kses( '<h1>'.__('Loan Repayment Calculator', 'quick-interest-slider').'</h1>',$allowed_html);
@@ -77,7 +77,7 @@ function qis_tabbed_page() {
 
 function qis_settings(){
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	$apostrophe=$none=$comma=$space=$dot=$before=$after=$days=$weeks=$months=$years=$slider=$text=$both=$beforeinterest=$afterinterest=false;
 	$US=$EU=$monthnum=false;
@@ -867,7 +867,7 @@ function qis_settings(){
 
 function qis_styles() {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	$pixel=$none=$shadow=$theme=$color=$content=false;
 	$plain = $hideline = $advanced = $one = $two = $three = $four = $five = false;
@@ -1252,7 +1252,7 @@ function qis_styles() {
 
 function qis_register() {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
  
 	$alternate=$width=$paragraph=$labeltype=$processpercent=$processfixed=$qis_apikey=$corner=$square=$round = false;
 	$hideline=$advanced = $one = $two = $three = $four = $five = false;
@@ -2015,7 +2015,7 @@ function qis_register() {
 
 function qis_application (){
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	$termstarget=false;
 	$advanced = $one = $two = $three = $four = $five = false;
@@ -2329,7 +2329,7 @@ function qis_application (){
 
 function qis_autoresponse_page() {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	$advanced = $one = $two = $three = $four = $five = false;
 	$formnumber = get_option('qis_formnumber');
@@ -2505,7 +2505,7 @@ function qis_autoresponse_page() {
 
 function qis_progress() {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 
 	$process = qis_get_stored_progress();
 	$track = qis_get_track();
@@ -2637,7 +2637,7 @@ function qis_progress() {
 
 function qis_setdropdowns (){
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) {
 		
@@ -2754,7 +2754,7 @@ function qis_setdropdowns (){
 
 function qis_outputtable (){
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) { 
 		$output['sort'] = stripslashes( $_POST['sort']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
@@ -2908,7 +2908,7 @@ function qis_outputtable (){
 // Upgrade
 function qis_upgrade () {
 	
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	
 	if( isset( $_POST['Upgrade']) && check_admin_referer("save_qis")) {
 		$page_url = qis_current_page_url();
@@ -3003,7 +3003,7 @@ function qis_upgrade () {
 function qis_admin_notice($message = '') {if (!empty( $message)) echo '<div class="updated"><p>'.wp_kses($message,isset($allowed_html)?$allowed_html:"").'</p></div>';}
 
 function qis_scripts_init($hook) {
-	wp_enqueue_style('qis_settings',plugins_url('settings.css', __FILE__),false,"QIS_VERSION",true);
+	wp_enqueue_style('qis_settings',plugins_url('settings.css', __FILE__),QIS_VERSION,true);
 	if($hook != 'settings_page_quick-interest-slider-settings') {
 		return;
 	}
@@ -3012,3 +3012,4 @@ function qis_scripts_init($hook) {
 	wp_enqueue_media();
 	wp_enqueue_script('qis-media', plugins_url('settings.js', __FILE__ ), array( 'jquery','wp-color-picker' ), "QIS_VERSION", true );
 }
+?>

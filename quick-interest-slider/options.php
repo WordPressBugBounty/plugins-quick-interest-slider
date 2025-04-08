@@ -1052,15 +1052,28 @@ function qis_splice($a1,$a2) {
 	return $a1;
 }
 
-function callback_allowed_html() {
+function sanitize_textfield_input($input_var){
+	if(isset($input_var)){
+		return sanitize_text_field(wp_unslash($input_var));
+	}
+	return null;
+}
+
+function qis_allowed_html() {
 
 	$allowed_tags = array(
 		'style' => array(),
-		'script' => array(),
+		'script' => array(
+			'type' => array(),
+		),
 		'form' => array(
+			'id' => array(),
+			'class' => array(),
 			'method' => array(),
 			'action' => array(),
 		),
+		
+		'output'=>array(),
 		'fieldset' => array(
 			'style' => array(),
 		),
@@ -1074,6 +1087,9 @@ function callback_allowed_html() {
 			'style' => array('display'),
 			'disabled' => array(),
 			
+		),
+		'label' => array(
+			'for' => array()
 		),
 		'select' => array(
 			'name'	=> array(),
@@ -1163,10 +1179,4 @@ function callback_allowed_html() {
 	);
 	
 	return $allowed_tags;
-}
-function sanitize_textfield_input($input_var){
-	if(isset($input_var)){
-		return sanitize_text_field(wp_unslash($input_var));
-	}
-	return null;
 }

@@ -3,7 +3,7 @@
 Plugin Name: Quick Interest Slider
 Plugin URI: http://loanpaymentplugin.com/
 Description: Interest calculator with slider and multiple display options.
-Version: 3.1.3
+Version: 3.1.4
 Author: aerin
 Author URI: http://quick-plugins.com/
 Text Domain: quick-interest-slider
@@ -13,7 +13,7 @@ License: GPLv2 or later
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define('QIS_VERSION', '3.1.3');
+define('QIS_VERSION', '3.1.4');
 
 require_once( plugin_dir_path( __FILE__ ) . '/options.php' );
 require_once( plugin_dir_path( __FILE__ ) . '/register.php' );
@@ -110,7 +110,7 @@ function qis_get_calculator() {
 }
 
 function qis_get_stylesheet() {
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	if (isset($_POST['form'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		header('content-type: text/css');
 		echo wp_kses(qis_generate_css(),$allowed_html);
@@ -151,7 +151,7 @@ function qis_block_init() {
 add_action( 'init', 'qis_block_init' );
 
 function qis_loop($atts) {
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	qis_get_stored_upgrade();
 	
 	// Shortcode Attributes
@@ -225,11 +225,15 @@ function qis_loop($atts) {
 	if (isset($_GET['amount']) && $_GET['amount'])	$atts['loaninitial'] = $_GET['amount']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	if (isset($_GET['term']) && $_GET['term'])		$atts['periodinitial'] = $_GET['term']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	
-	$dropdown = qis_get_stored_dropdown();
+	$dropdown['use'] = false;
+	$atts['calculatorname'] = false;
 	
-	$atts['calculatorname'] = $atts['calculator'] ? $dropdown['forms'][$atts['calculator']] : $dropdown['forms']['one'];
+	if ($atts['use'] == 'dropdown') {
+		$dropdown['use'] = true;
+		$dropdown = qis_get_stored_dropdown();
+		$atts['calculatorname'] = $atts['calculator'] ? $dropdown['forms'][$atts['calculator']] : $dropdown['forms']['one'];
+	}
 	
-	if ($atts['use'] == 'dropdown') $dropdown['use'] = true;
 	if ($atts['calculator'] == 'one')	$atts['calculator'] = 1;
 	if ($atts['calculator'] == 'two')	$atts['calculator'] = 2;
 	if ($atts['calculator'] == 'three') $atts['calculator'] = 3;
@@ -375,14 +379,15 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	
 	global $qis_forms;
 
-	$formnumber = $atts['calculator'];
-	$theform	= (!$formnumber || $formnumber == 1) ? 1 : $formnumber;
-	$settings	= qis_get_stored_settings($theform);
-	$style		= qis_get_stored_style();
-	$register	= qis_get_stored_register($theform);
-	$table		= qis_get_stored_ouputtable();
-	$qppkey		= qis_key();
-	$floats		 = false;
+	$formnumber 	= $atts['calculator'];
+	$theform		= (!$formnumber || $formnumber == 1) ? 1 : $formnumber;
+	$settings		= qis_get_stored_settings($theform);
+	$style			= qis_get_stored_style();
+	$register		= qis_get_stored_register($theform);
+	$table			= qis_get_stored_ouputtable();
+	$qppkey			= qis_key();
+	$floats			= false;
+	$allowed_html	= qis_allowed_html();
 	
 	$qis_forms++;
 	
@@ -510,6 +515,9 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	if ($settings['downpaymentpercent'] && !$dpf) $dpf = $settings['downpaymentpercent'].'%';
 	
 	if (strpos($settings['repaymentlabel'],'[table]') !== false) {
+		
+		$strongon = $table['values-strong'] ? '<strong>' : '';
+		$strongoff = $table['values-strong'] ? '</strong>' : '';
 		
 		$outputtable = '<table class="outputtable">';
 
@@ -962,6 +970,8 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	$output .= '<div id="filechecking"><div class="filecheckingcontent"><img src="'.plugin_dir_url( __FILE__ ).'/img/waiting.gif'.'" alt="Loading"></div></div>'; //  phpcs:ignore PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage
 
 	$output .= '</div></form>';
+	//return wp_kses($output,$allowed_html);
+	
 	return $output;
 }
 
@@ -1033,10 +1043,10 @@ function qis_tooltip($text) {
 
 function qis_scripts() {
 	$style = qis_get_stored_style();
-	if (!$style['nostyles']) wp_enqueue_style( 'qis_style',plugins_url('slider.css', __FILE__),"QIS_VERSION",true);
+	if (!$style['nostyles']) wp_enqueue_style( 'qis_style',plugins_url('slider.css', __FILE__),QIS_VERSION,true);
 	wp_enqueue_script('jquery-ui-datepicker');
 	wp_enqueue_script("jquery-effects-core");
-	wp_enqueue_script('qis_script',plugins_url('slider.js?v=1.16', __FILE__ ), array( 'jquery' ), "QIS_VERSION", true );
+	wp_enqueue_script('qis_script',plugins_url('slider.js', __FILE__ ), array( 'jquery' ), QIS_VERSION, true );
 	//wp_enqueue_style ('jquery-style', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css');
 	wp_enqueue_style ('jquery-style', 'jquery-ui.css',false,"1.11.2",true);
 	wp_localize_script('qis_script', 'qis_application', [
@@ -1125,8 +1135,6 @@ function qis_generate_css() {
 
 $table = qis_get_stored_ouputtable();
 $right = $table['values-padding'] * 2;
-$strongon = $table['values-strong'] ? '<strong>' : '';
-$strongoff = $table['values-strong'] ? '</strong>' : '';
 $data .= $table['values-colour'] ? '.outputtable td{padding: 0 '.$right.'px '.$table['values-padding'].'px 0;}.values-colour{color:'.$table['values-colour'].'}' : '';
 $right = $style['floatpercentage'] ? 98 - $style['floatpercentage'] : 98;
 	
@@ -1141,7 +1149,7 @@ $data .= '.qis-add-float {display:grid;grid-template-columns:'.$style['floatperc
 // Builds Application Form CSS
 
 function qis_register_css () {
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	$code=$header=$input=$submitwidth=$paragraph=$submitbutton=$submit='';
 	$style = qis_get_register_style();
 	$corners = '-webkit-border-radius:'.$style['corners'].'px;border-radius:'.$style['corners'].'px;';
@@ -1165,7 +1173,7 @@ function qis_register_css () {
 
 // Add to Head
 function qis_head_css ($atts) {
-	$allowed_html = callback_allowed_html();
+	$allowed_html = qis_allowed_html();
 	$atts = shortcode_atts(array('calculator' => ''),$atts,'quick-interest-slider');
 	$data = '<style type="text/css" media="screen">'.qis_generate_css($atts['calculator']).'</style><script type="text/javascript">qis__rates = [];</script>';
 	echo wp_kses($data,$allowed_html);
@@ -1269,7 +1277,7 @@ function qis_show_progress() {
 // Report of all Applications
 
 function qis_registration_report() {
-    $allowed_html = callback_allowed_html();
+    $allowed_html = qis_allowed_html();
 	$message = get_option('qis_messages');
 	ob_start();
 	$content ='<div id="qis-widget">
@@ -1474,3 +1482,4 @@ function qis_separator($s,$separator) {
 	else $se = ' ';
 	return trim(preg_replace("/(\d)(?=(\d{3})+$)/",'$1'.$se,$s));
 }
+?>

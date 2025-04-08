@@ -6,7 +6,7 @@ function qis_messages() {
 
 	$content=$current=$all=$qis_edit=false;
 	$selected = array();
-    $allowed_html = callback_allowed_html();
+    $allowed_html = qis_allowed_html();
 	// Delete all applications
 	if( isset( $_POST['qis_reset_message'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		delete_option('qis_messages');
