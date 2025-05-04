@@ -3,7 +3,7 @@
 Contributors: Dev
 Tags: loan slider jquery
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.8
 Stable tag: 3.1.4
 License: GPLv2 or later
 
@@ -67,6 +67,10 @@ Bespoke versions available for bank comparisons, quotes, full loan applications 
 6.	Change the options in the plugin settings page.
 
 == Changelog ==
+
+= 3.1.5 =
+
+*	Fixes font sizing bug on small screens
 
 = 3.1.4 =
 

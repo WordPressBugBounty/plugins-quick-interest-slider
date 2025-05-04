@@ -3,7 +3,7 @@
 Plugin Name: Quick Interest Slider
 Plugin URI: http://loanpaymentplugin.com/
 Description: Interest calculator with slider and multiple display options.
-Version: 3.1.4
+Version: 3.1.5
 Author: aerin
 Author URI: http://quick-plugins.com/
 Text Domain: quick-interest-slider
@@ -13,7 +13,7 @@ License: GPLv2 or later
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define('QIS_VERSION', '3.1.4');
+define('QIS_VERSION', '3.1.5');
 
 require_once( plugin_dir_path( __FILE__ ) . '/options.php' );
 require_once( plugin_dir_path( __FILE__ ) . '/register.php' );
@@ -1076,7 +1076,7 @@ function qis_generate_css() {
 	//Slider output on small screens
 	$smaller = preg_split('#(?<=\d)(?=[a-z%])#i', $style['output-size']);
 	//$smaller = (floatval($smaller[0])*0.6).$smaller[1];
-    $smaller = (floatval($smaller[0])*0.6).$smaller[0];
+    $smaller = (floatval($smaller[0])*0.6);
 	// Handle
 	$svgsize = $handlesize = preg_split('#(?<=\d)(?=[a-z%])#i', $style['handle-size']);
 	$handlesize[0] = $handlesize[0] - $style['handle-thickness']*2;
@@ -1140,7 +1140,7 @@ $right = $style['floatpercentage'] ? 98 - $style['floatpercentage'] : 98;
 	
 $data .= '.qis-add-float {display:grid;grid-template-columns:'.$style['floatpercentage'].'% '.$right.'%;grid-gap:2%;}
 @media only screen and (max-width:'.$style['floatbreakpoint'].'px) {.qis-add-float{display:block;}
-.qis-slidercenter {font-size:'.$smaller.'px;}.qis_buttons, .qis_slideroutputs {margin-bottom:'.($style['slideroutputmargin']/2).'px;}
+.qis-slidercenter {font-size:'.$style['toplinefont'].'px;}.qis_buttons, .qis_slideroutputs {margin-bottom:'.($style['slideroutputmargin']/2).'px;}
 }';
 	
 	return $data;
