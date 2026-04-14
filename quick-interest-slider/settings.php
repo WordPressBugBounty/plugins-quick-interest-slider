@@ -1,4 +1,7 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) exit; 
+
 add_action('admin_menu', 'qis_page_init');
 add_action('admin_notices', 'qis_admin_notice' );
 add_action('admin_enqueue_scripts', 'qis_scripts_init');

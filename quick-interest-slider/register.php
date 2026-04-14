@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit; 
+
 //ini_set('error_reporting', 0);
 
 define('QIS_LABEL_TYPE_NONE',0);
@@ -946,15 +948,15 @@ function qis_display_application( $values, $errors,$applied) {
 		$content .= '</fieldset>';
 	}
 	$content .= '
-	<input type="hidden" name="formname" value="' . $values['formname'] . '" />
-	<input type="hidden" name="sentdate" value="' . $values['sentdate'] . '" />
-	<input type="hidden" name="reference" value="' . $values['reference'] . '" />
-	<input type="hidden" name="yourname" value="' . $values['yourname'] . '" />
-	<input type="hidden" name="youremail" value="' . $values['youremail'] . '" />
-	<input type="hidden" name="yourtelephone" value="' . $values['yourtelephone'] . '" />
-	<input type="hidden" name="loan-amount" value="' . $values['loan-amount'] . '" />
-	<input type="hidden" name="loan-period" value="' . $values['loan-period'] . '" />
-	<input type="hidden" name="rate" value="' . $values['rate'] . '" />
+	<input type="hidden" name="formname" value="' . esc_attr( $values['formname'] ) . '" />
+	<input type="hidden" name="sentdate" value="' . esc_attr( $values['sentdate'] ) . '" />
+	<input type="hidden" name="reference" value="' . esc_attr( $values['reference'] ) . '" />
+	<input type="hidden" name="yourname" value="' . esc_attr( $values['yourname'] ) . '" />
+	<input type="hidden" name="youremail" value="' . esc_attr( $values['youremail'] ) . '" />
+	<input type="hidden" name="yourtelephone" value="' . esc_attr( $values['yourtelephone'] ) . '" />
+	<input type="hidden" name="loan-amount" value="' . esc_attr( $values['loan-amount'] ) . '" />
+	<input type="hidden" name="loan-period" value="' . esc_attr( $values['loan-period'] ) . '" />
+	<input type="hidden" name="rate" value="' . esc_attr( $values['rate'] ) . '" />
 	<input onClick="check();" type="submit" value="'.$register['part2submit'].'" class="submit" name="part2submit" />
 	</div>
 	</form>';

@@ -1,201 +1,149 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 qis_messages();
 
-// Builds and manages the applications table 
 function qis_messages() {
 
-	$content=$current=$all=$qis_edit=false;
+	$content = $current = $all = $qis_edit = false;
 	$selected = array();
     $allowed_html = qis_allowed_html();
-	// Delete all applications
-	if( isset( $_POST['qis_reset_message'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+
+	if ( isset( $_POST['qis_reset_message']) && check_admin_referer("save_qis") ) {
 		delete_option('qis_messages');
-		qis_admin_notice(__('All applications have been deleted','quick-interest-slider').'.');
+		qis_admin_notice( esc_html__('All applications have been deleted','quick-interest-slider') . '.' );
 	}
 
-	// Delete selected applications
-	if( isset($_POST['qis_delete_selected'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if ( isset($_POST['qis_delete_selected']) && check_admin_referer("save_qis") ) {
 		$message = get_option('qis_messages');
 		$count = count($message);
+
 		for($i = 0; $i <= $count; $i++) {
-			if ($_POST[$i] == 'checked') { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			if ( isset($_POST[$i]) && $_POST[$i] === 'checked') {
 				unset($message[$i]);
 			}
 		}
+
 		$message = array_values($message);
 		update_option('qis_messages', $message );
-		qis_admin_notice(__('Selected applications have been deleted','quick-interest-slider').'.');
+		qis_admin_notice( esc_html__('Selected applications have been deleted','quick-interest-slider') . '.' );
 	}
 
-	// Approve Selected Applications
-	if( isset($_POST['qis_approve_selected'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if ( isset($_POST['qis_approve_selected']) && check_admin_referer("save_qis") ) {
 		$message = get_option('qis_messages');
+
 		foreach ($message as $key => $value ) {
-			if ($_POST[$key] == 'checked') { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			if ( isset($_POST[$key]) && $_POST[$key] === 'checked') {
 				$message[$key]['confirmed'] = true;
 			}
 		}
+
 		update_option('qis_messages', $message );
-		qis_admin_notice(__('Selected applications have been approved','quick-interest-slider').'.');
+		qis_admin_notice( esc_html__('Selected applications have been approved','quick-interest-slider') . '.' );
 	}
 
-	// Send applications as email
-	if( isset($_POST['qis_emaillist'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if ( isset($_POST['qis_emaillist']) && check_admin_referer("save_qis") ) {
+
 		$fromemail = get_bloginfo('admin_email');
-		$title = get_bloginfo('name');
-		$message = get_option('qis_messages');
+		$title     = get_bloginfo('name');
+		$message   = get_option('qis_messages');
+
 		$content = qis_build_registration_table ($message,'report',null,null);
-		$sendtoemail = sanitize_textfield_input($_POST['sendtoemail']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$headers = "From: ".title." <".$fromemail.">\r\n"."Content-Type: text/html; charset=\"utf-8\"\r\n";	
-		wp_mail($sendtoemail, 'Loan Applications', $content, $headers);
-		qis_admin_notice(__('Application list has been sent to','quick-interest-slider').' '.$sendtoemail.'.');
+
+		$sendtoemail = isset($_POST['sendtoemail']) ? sanitize_email($_POST['sendtoemail']) : '';
+
+		$headers = "From: " . esc_html($title) . " <" . sanitize_email($fromemail) . ">\r\n";
+		$headers .= "Content-Type: text/html; charset=\"utf-8\"\r\n";
+
+		wp_mail($sendtoemail, esc_html__('Loan Applications','quick-interest-slider'), $content, $headers);
+
+		qis_admin_notice(
+			esc_html__('Application list has been sent to','quick-interest-slider') . ' ' . esc_html($sendtoemail) . '.'
+		);
 	}
 
-	// Update edited applications
-	if( isset($_POST['qis_update'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$arr = array('yourname','youremail','yourtelephone','yourmessage','yourchecks','youraddress','yourdropdown','yourdropdown2','yourradio','loan-amount','loan-period','progress');
+	if ( isset($_POST['qis_update']) && check_admin_referer("save_qis") ) {
+
 		$message = get_option('qis_messages');
-		
-		// Loop through the $_POST['message'] array
-		foreach ($_POST['message'] as $id => $row) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			// Loop through the row thats contained in the message array entry
+
+		foreach ($_POST['message'] as $id => $row) {
 			foreach ($row as $k => $v) {
-				// Do the same value assignment you make in your code
-				$message[$id][$k] = $v;
+				$message[$id][$k] = sanitize_text_field($v);
 			}
 		}
+
 		update_option('qis_messages',$message);
-		qis_admin_notice(__('Applications have been updated','quick-interest-slider'));
+		qis_admin_notice( esc_html__('Applications have been updated','quick-interest-slider') );
 	}
-	
-	// Edit all applications
-	if( isset($_POST['qis_edit'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+
+	if ( isset($_POST['qis_edit']) && check_admin_referer("save_qis") ) {
 		$qis_edit = 'all';
 	}
-	
-	// Edit selected applications
-	if( isset($_POST['qis_edit_selected']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+
+	if ( isset($_POST['qis_edit_selected']) && check_admin_referer("save_qis") ) {
 		$qis_edit = 'selected';
-		$selected = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$selected = $_POST;
 	}
 
 	$message = get_option('qis_messages');
-	
 	$current_user = wp_get_current_user();
-	if ( isset($sendtoemail) && !$sendtoemail) {
-		$sendtoemail = $current_user->user_email;
-	} else {
-		$sendtoemail = '';
-	}
-	
+
+	$sendtoemail = !empty($sendtoemail) ? $sendtoemail : $current_user->user_email;
+
 	if(!is_array($message)) $message = array();
-	$dashboard = '<div class="wrap">
-	<h1>'.__('Loan Applications','quick-interest-slider').'</h1>
-	<div id="qis-widget">
-	<form method="post" id="qis_download_form" action="">';
-	
+
+	$dashboard = '<div class="wrap">';
+	$dashboard .= '<h1>' . esc_html__('Loan Applications','quick-interest-slider') . '</h1>';
+	$dashboard .= '<div id="qis-widget">';
+	$dashboard .= '<form method="post" id="qis_download_form" action="">';
+
 	$content = qis_build_registration_table ($message,'',$qis_edit,$selected);
+
 	if ($content) {
+
 		$dashboard .= $content;
-		$dashboard .='<p><input type="submit" name="qis_reset_message" class="button-secondary" value="'.__('Delete all applications','quick-interest-slider').'" onclick="return window.confirm( \'Are you sure you want to delete all the applications?\' );"/>
-		<input type="submit" name="qis_delete_selected" class="button-secondary" value="'.__('Delete Selected','quick-interest-slider').'" onclick="return window.confirm( \'Are you sure you want to delete the selected applications?\' );"/> 
-		<input type="submit" name="qis_approve_selected" class="button-secondary" value="'.__('Approve Selected','quick-interest-slider').'" onclick="return window.confirm( \'Are you sure you want to approve the selected applications?\' );"/> ';
-		if ($qis_edit) $dashboard .= '<input type="submit" name="qis_update" class="button-primary" value="'.__('Update Applications','quick-interest-slider').'" /> ';
-		else $dashboard .= '<input type="submit" name="qis_edit" class="button-secondary" value="'.__('Edit Applications','quick-interest-slider').'" /> <input type="submit" name="qis_edit_selected" class="button-secondary" value="'.__('Edit Selected','quick-interest-slider').'" /> ';
-		$dashboard .= '<input type="submit" name="qis_cancel" class="button-secondary" value="'.__('Cancel','quick-interest-slider').'" /></p>
-		<p>'.__('Send applications to this email address','quick-interest-slider').': <input type="text" name="sendtoemail" value="'.$sendtoemail.'">&nbsp;
-		<input type="submit" name="qis_emaillist" class="button-primary" value="'.__('Email List','quick-interest-slider').'" /></p>
-		</form>';
-	} else {
-		$dashboard .= '<p>'.__('There are no applications','quick-interest-slider').'</p>';
-	}
-	$dashboard .= '</div></div>';		
-	echo wp_kses($dashboard,$allowed_html);
-}
+		$dashboard .= wp_nonce_field("save_qis", '_wpnonce', true, false);
 
-function qis_message_thumbs($value) {
-	$content = '<td>';
-	if ($value['attachment'] ) { 
-		$mime = qis_attach_content_type($value['attachment']);
-		$filename = $value['attachment'];
-		$content .= '<a href="'.$value['attachment'].'"><img style="width:auto;height:30px;" ';
-		if (strpos($value['attachment'],'.pdf')) {
-			$content .= 'src="'.plugin_dir_url( __FILE__ ).'img/pdf.png"';
-		} elseif (strpos($value['attachment'],'.xls')) {
-			$content .= 'src="'.plugin_dir_url( __FILE__ ).'img/xls.png"';
-		} elseif (strpos($value['attachment'],'.doc')) {
-			$content .= 'src="'.plugin_dir_url( __FILE__ ).'img/doc.png"';
-		} elseif(strstr($mime, "image/")) {
-			$content .= 'src="'.$value['attachment'].'"';
+		$dashboard .= '<p>
+			<input type="submit" name="qis_reset_message" class="button-secondary"
+				value="' . esc_attr__('Delete all applications','quick-interest-slider') . '"
+				onclick="return window.confirm(\'' . esc_js('Are you sure you want to delete all the applications?') . '\');"/>
+
+			<input type="submit" name="qis_delete_selected" class="button-secondary"
+				value="' . esc_attr__('Delete Selected','quick-interest-slider') . '"
+				onclick="return window.confirm(\'' . esc_js('Are you sure you want to delete the selected applications?') . '\');"/>
+
+			<input type="submit" name="qis_approve_selected" class="button-secondary"
+				value="' . esc_attr__('Approve Selected','quick-interest-slider') . '"
+				onclick="return window.confirm(\'' . esc_js('Are you sure you want to approve the selected applications?') . '\');"/>
+		';
+
+		if ($qis_edit) {
+			$dashboard .= '<input type="submit" name="qis_update" class="button-primary"
+				value="' . esc_attr__('Update Applications','quick-interest-slider') . '" />';
 		} else {
-			$content .= 'src="'.plugin_dir_url( __FILE__ ).'img/files.png"';
+			$dashboard .= '<input type="submit" name="qis_edit" class="button-secondary"
+				value="' . esc_attr__('Edit Applications','quick-interest-slider') . '" /> <input type="submit" name="qis_edit_selected" class="button-secondary"
+				value="' . esc_attr__('Edit Selected','quick-interest-slider') . '" />';
 		}
-		$content .= ' alt="'.$filename.'" title="'.$filename.'" /></a>';
-		} 
-	$content .= '</td>';
-	return $content;
-}
 
-function qis_attach_content_type($filename) {
-	$mime_types = array(
-		'txt' => 'text/plain',
-		'htm' => 'text/html',
-		'html' => 'text/html',
-		'php' => 'text/html',
-		'css' => 'text/css',
-		'js' => 'application/javascript',
-		'json' => 'application/json',
-		'xml' => 'application/xml',
-		'swf' => 'application/x-shockwave-flash',
-		'flv' => 'video/x-flv',
-		// images
-		'png' => 'image/png',
-		'jpe' => 'image/jpeg',
-		'jpeg' => 'image/jpeg',
-		'jpg' => 'image/jpeg',
-		'gif' => 'image/gif',
-		'bmp' => 'image/bmp',
-		'ico' => 'image/vnd.microsoft.icon',
-		'tiff' => 'image/tiff',
-		'tif' => 'image/tiff',
-		'svg' => 'image/svg+xml',
-		'svgz' => 'image/svg+xml',
-		// archives
-		'zip' => 'application/zip',
-		'rar' => 'application/x-rar-compressed',
-		'exe' => 'application/x-msdownload',
-		'msi' => 'application/x-msdownload',
-		'cab' => 'application/vnd.ms-cab-compressed',
-		// audio/video
-		'mp3' => 'audio/mpeg',
-		'qt' => 'video/quicktime',
-		'mov' => 'video/quicktime',
-		// adobe
-		'pdf' => 'application/pdf',
-		'psd' => 'image/vnd.adobe.photoshop',
-		'ai' => 'application/postscript',
-		'eps' => 'application/postscript',
-		'ps' => 'application/postscript',
-		// ms office
-		'doc' => 'application/msword',
-		'rtf' => 'application/rtf',
-		'xls' => 'application/vnd.ms-excel',
-		'ppt' => 'application/vnd.ms-powerpoint',
-		// open office
-		'odt' => 'application/vnd.oasis.opendocument.text',
-		'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
-	);
-	$ext = strtolower(array_pop(explode('.',$filename)));
-	if (array_key_exists($ext, $mime_types)) {
-		return $mime_types[$ext];
+		$dashboard .= ' <input type="submit" name="qis_cancel" class="button-secondary"
+			value="' . esc_attr__('Cancel','quick-interest-slider') . '" /></p>';
+
+		$dashboard .= '<p>' . esc_html__('Send applications to this email address','quick-interest-slider') . ':
+			<input type="text" name="sendtoemail" value="' . esc_attr($sendtoemail) . '">
+			<input type="submit" name="qis_emaillist" class="button-primary"
+			value="' . esc_attr__('Email List','quick-interest-slider') . '" />
+		</p>';
+
+		$dashboard .= '</form>';
+
+	} else {
+		$dashboard .= '<p>' . esc_html__('There are no applications','quick-interest-slider') . '</p>';
 	}
-	elseif (function_exists('finfo_open')) {
-		$finfo = finfo_open(FILEINFO_MIME);
-		$mimetype = finfo_file($finfo, $filename);
-		finfo_close($finfo);
-		return $mimetype;
-	}
-	else {
-		return 'application/octet-stream';
-	}
+
+	$dashboard .= '</div></div>';
+
+	echo wp_kses($dashboard, $allowed_html);
 }

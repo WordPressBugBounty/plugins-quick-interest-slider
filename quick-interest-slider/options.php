@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 function qis_get_stored_forex() {
 	
 	$modified	= get_option('qis_forex_modified');

@@ -3,7 +3,7 @@
 Plugin Name: Quick Interest Slider
 Plugin URI: http://loanpaymentplugin.com/
 Description: Interest calculator with slider and multiple display options.
-Version: 3.1.5
+Version: 3.1.7
 Author: aerin
 Author URI: http://quick-plugins.com/
 Text Domain: quick-interest-slider
@@ -13,7 +13,7 @@ License: GPLv2 or later
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define('QIS_VERSION', '3.1.5');
+define('QIS_VERSION', '3.1.7');
 
 require_once( plugin_dir_path( __FILE__ ) . '/options.php' );
 require_once( plugin_dir_path( __FILE__ ) . '/register.php' );
@@ -25,7 +25,6 @@ add_shortcode('qis-subscribe', 'qis_subscribe');
 add_shortcode('qisprogress', 'qis_show_progress');
 
 add_action('wp_enqueue_scripts', 'qis_scripts');
-add_action('init', 'qis_lang_init');
 add_action('wp_head', 'qis_head_css');
 add_action('template_redirect', 'qis_upgrade_ipn');
 
@@ -94,10 +93,10 @@ function qis_get_calculator() {
 	
 	$return = ['success' => false];
 	
-	if (isset($_POST['attributes'])) { // phpcs:ignore WordPress.Security.NonceVerification
+	if (isset($_POST['attributes'])) {
 		
 		// Pass the shortcode attributes to the qis_loop handler
-		$data = qis_loop($_POST['attributes']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$data = qis_loop($_POST['attributes']);
 		
 		$return['data']		= $data;
 		$return['success']	= true;
@@ -111,7 +110,7 @@ function qis_get_calculator() {
 
 function qis_get_stylesheet() {
 	$allowed_html = qis_allowed_html();
-	if (isset($_POST['form'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (isset($_POST['form'])) {
 		header('content-type: text/css');
 		echo wp_kses(qis_generate_css(),$allowed_html);
 	}
@@ -222,8 +221,8 @@ function qis_loop($atts) {
 		$atts[$key] = sanitize_text_field($atts[$key]);
 	}
 	
-	if (isset($_GET['amount']) && $_GET['amount'])	$atts['loaninitial'] = $_GET['amount']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-	if (isset($_GET['term']) && $_GET['term'])		$atts['periodinitial'] = $_GET['term']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (isset($_GET['amount']) && $_GET['amount'])	$atts['loaninitial'] = sanitize_text_field( wp_unslash( $_GET['amount'] ) );
+	if (isset($_GET['term']) && $_GET['term'])		$atts['periodinitial'] = sanitize_text_field( wp_unslash( $_GET['term'] ) );
 	
 	$dropdown['use'] = false;
 	$atts['calculatorname'] = false;
@@ -254,10 +253,10 @@ function qis_loop($atts) {
 	
 	// Apply Now Button
 	
-	if (!empty($_POST['qisapply'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$formvalues = qis_check_key($_POST); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		if (isset($_GET['param'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$formvalues['param'] = $_GET['param']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (!empty($_POST['qisapply'])) {
+		$formvalues = qis_check_key($_POST);
+		if (isset($_GET['param'])) {
+			$formvalues['param'] = sanitize_text_field( wp_unslash( $_GET['param'] ) );
 		} else {
 			$formvalues['param'] = false;
 		}
@@ -265,26 +264,26 @@ function qis_loop($atts) {
 		$dropdown = qis_get_stored_dropdown();
 		$url = $settings['applynowaction'];
 		if ($settings['applynowquery']) {
-			$settings['querystructure'] = str_replace('[total]', $_POST['totalamount'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$settings['querystructure'] = str_replace('[amount]', $_POST['loan-amount'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$settings['querystructure'] = str_replace('[term]', $_POST['loan-period'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$settings['querystructure'] = str_replace('[rate]', $_POST['rate'], $settings['querystructure']); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$settings['querystructure'] = str_replace('[total]', sanitize_text_field( wp_unslash( $_POST['totalamount'] ) ), $settings['querystructure']); 
+			$settings['querystructure'] = str_replace('[amount]', sanitize_text_field( wp_unslash( $_POST['loan-amount'] ) ), $settings['querystructure']);
+			$settings['querystructure'] = str_replace('[term]', sanitize_text_field( wp_unslash( $_POST['loan-period'] ) ), $settings['querystructure']);
+			$settings['querystructure'] = str_replace('[rate]', sanitize_text_field( wp_unslash( $_POST['rate'] ) ), $settings['querystructure']);
 			$settings['querystructure'] = str_replace('[form]', $formvalues['formname'], $settings['querystructure']);
 			$settings['querystructure'] = str_replace('[calculator]', $dropdown['forms'][$formvalues['formname']], $settings['querystructure']);
 			if ($formvalues['param']) $settings['querystructure'] = str_replace('[param]', $formvalues['param'], $settings['querystructure']);
 			$url = $url.$settings['querystructure'];
 		}
 
-		echo "<p>".__('Redirecting....','quick-interest-slider')."</p>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<meta http-equiv="refresh" content="0;url='.$url.'" />'; // phpcs:ignore  WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo "<p>".__('Redirecting....','quick-interest-slider')."</p>";
+		echo '<meta http-equiv="refresh" content="0;url=' . esc_url( $url ) . '" />';
         die();
 		//wp_redirect( $url );
 		//exit();
 
 	// Application Form
 		
-	} elseif (!empty($_POST['qissubmit'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$formvalues = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	} elseif (!empty($_POST['qissubmit'])) {
+		$formvalues = array_map( 'sanitize_text_field', wp_unslash( $_POST ) );
 		$formerrors = array();
 		
 		if (!qis_verify_form($formvalues, $formerrors)) {
@@ -298,8 +297,8 @@ function qis_loop($atts) {
 		
 	// Part 2 Application
 		
-	} elseif (!empty($_POST['part2submit'])) { // phpcs:ignore WordPress.Security.NonceVerification
-		$formvalues = $_POST; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	} elseif (!empty($_POST['part2submit'])) {
+		$formvalues = array_map( 'sanitize_text_field', wp_unslash( $_POST ) );
 		$formerrors = array();
 		if (!qis_verify_application($formvalues, $formerrors)) {
 			return qis_display_application($formvalues, $formerrors,null);
@@ -309,7 +308,7 @@ function qis_loop($atts) {
 		}
 
 	
-	} elseif (!isset($_POST['attributes']) && ($dropdown['use'])) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	} elseif (!isset($_POST['attributes']) && ($dropdown['use'])) {
 		
 		// Show Dropdown 
 		$dd = '<select id="calculators">';
@@ -319,7 +318,7 @@ function qis_loop($atts) {
 		
 		foreach ($dropdown['forms'] as $key => $name) {
 			if ($name) {
-				$dd .= '<option value="'.$i.'" '.$addition.'>'.$name.'</option>';
+				$dd .= '<option value="'.esc_attr($i).'" '.$addition.'>'.esc_html($name).'</option>';
 				if ($one++ == 1) $addition = '';
 			}
 			$i++;
@@ -578,7 +577,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	// Append the currencies to the rates object
 
 	$outputA['currencies'] = array();
-	$s_form = ((isset($_POST['submitted_form']))? $_POST['submitted_form']:'N/A'); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$s_form = ((isset($_POST['submitted_form']))? $_POST['submitted_form']:'N/A');
 	
 	$i = 1;
 	for ($A_i = 0; isset($settings['currency_array'][$A_i]); $A_i++) {
@@ -595,18 +594,18 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	$outputA['applynowaction'] = $settings['applynowaction'];
 	
 	$output = '<script type="text/javascript">';
-	$output .= 'qis__rates["qis_'.$qis_forms.'"] = '.wp_json_encode($outputA).';';
+	$output .= 'qis__rates["qis_'.esc_js($qis_forms).'"] = '.wp_json_encode($outputA).';';
 	$output .= 'qis_form = '.wp_json_encode($s_form).';';
 	$output .= '</script>';
 	$output .= $floats;
-	$output .= '<form action="" class="qis_form '.$style['border'].'" method="POST" id="qis_'.$qis_forms.'" enctype="multipart/form-data">';
-	$output .= '<input type="hidden" name="submitted_form" value="qis_'.$qis_forms.'" />';
+	$output .= '<form action="" class="qis_form '.esc_attr($style['border']).'" method="POST" id="qis_'.esc_attr($qis_forms).'" enctype="multipart/form-data">';
+	$output .= '<input type="hidden" name="submitted_form" value="qis_'.esc_attr($qis_forms).'" />';
 	
-	if ($settings['formheader']) $output .= '<h2>'.$settings['formheader'].'</h2>';
+	if ($settings['formheader']) $output .= '<h2>'.esc_html($settings['formheader']).'</h2>';
 	
-	$output .= '<div class="qis-sections qis-float '.$addFloat.'"><div class="qis-inputs qis-float-columns">';
+	$output .= '<div class="qis-sections qis-float '.esc_attr($addFloat).'"><div class="qis-inputs qis-float-columns">';
 	
-	$output .= '<input type="hidden" name="interesttype" value="'.$settings['interesttype'].'" />';
+	$output .= '<input type="hidden" name="interesttype" value="'.esc_attr($settings['interesttype']).'" />';
 	
 	$sort = explode(",", $settings['sort']);
 	
@@ -624,16 +623,16 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 			// Principal Slider
 
 			if ($settings['loanlabel'] && $settings['sliderlabelposition'] == 'aboveslider') {
-				$output .= '<div class="slider-label">'.$settings['loanlabel'];
+				$output .= '<div class="slider-label">'.esc_html($settings['loanlabel']);
 				if ($settings['loanhelp']) $output .= qis_tooltip($settings['loaninfo']);
 				$output .= '</div>';
 			}
 			
 			if ($settings['loanlabel'] && $settings['sliderlabelposition'] == 'beforeoutput') {
-				$label = '<span class="sliderlabel">'.$settings['loanlabel'].' </span>';
+				$label = '<span class="sliderlabel">'.esc_html($settings['loanlabel']).' </span>';
 			}
 	
-			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.$formvalues['loan-amount'].'" />';
+			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.esc_attr($formvalues['loan-amount']).'" />';
 			elseif ($settings['outputlimits']) $oX = '<output></output>';
 			else $oX = null;
 			
@@ -650,10 +649,10 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 				if ($settings['buttons'] && $settings['sliderbuttonposition'] == 'sliderside') {
 					$output .= '<div class="qis_buttons">
 					<div class="circle-control minus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232c-13.3 0-24 10.7-24 24s10.7 24 24 24H328c13.3 0 24-10.7 24-24s-10.7-24-24-24H184z"/></svg></div>
-					<div><input type="range" name="loan-amount" min="'.$settings['loanmin'].'" max="'.$settings['loanmax'].'" value="'.$formvalues['loan-amount'].'" step="'.$settings['loanstep'].'" data-qis></div>
+					<div><input type="range" name="loan-amount" min="'.esc_attr($settings['loanmin']).'" max="'.esc_attr($settings['loanmax']).'" value="'.esc_attr($formvalues['loan-amount']).'" step="'.esc_attr($settings['loanstep']).'" data-qis></div>
 					<div class="circle-control plus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344c0 13.3 10.7 24 24 24s24-10.7 24-24V280h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H280V168c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H168c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z"/></svg></div></div>';
 				} else {
-					$output .= '<input type="range" name="loan-amount" min="'.$settings['loanmin'].'" max="'.$settings['loanmax'].'" value="'.$formvalues['loan-amount'].'" step="'.$settings['loanstep'].'" data-qis>';
+					$output .= '<input type="range" name="loan-amount" min="'.esc_attr($settings['loanmin']).'" max="'.esc_attr($settings['loanmax']).'" value="'.esc_attr($formvalues['loan-amount']).'" step="'.esc_attr($settings['loanstep']).'" data-qis>';
 				}
 			
 				if ($settings['markers']) {
@@ -665,7 +664,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 				$label = str_replace('[min]',$amountmin,$settings['amounttext']);
 				$label = str_replace('[max]',$amountmax,$label);
 				$output .= '<div class="textlabel".>'.$label.'</div>';
-				$output .= '<div class="hidethis"><input type="range" name="loan-amount" min="'.$settings['loanmin'].'" max="'.$settings['loanmax'].'" value="'.$formvalues['loan-amount'].'" step="'.$settings['loanstep'].'" data-qis></div>';
+				$output .= '<div class="hidethis"><input type="range" name="loan-amount" min="'.esc_attr($settings['loanmin']).'" max="'.esc_attr($settings['loanmax']).'" value="'.esc_attr($formvalues['loan-amount']).'" step="'.esc_attr($settings['loanstep']).'" data-qis></div>';
 			}
 			
 			$output .= '</div>';
@@ -677,20 +676,20 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	
 			// Term Slider
 	
-			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.$formvalues['loan-period'].'" />';
+			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.esc_attr($formvalues['loan-period']).'" />';
 			elseif ($settings['outputlimits']) $oX = '<output></output>';
 			else $oX = null;
 			
 			if ($settings['periodslider']) {
 				
 				if ($settings['termlabel'] && $settings['sliderlabelposition'] == 'aboveslider') {
-					$output .= '<div class="slider-label">'.$settings['termlabel'];
+					$output .= '<div class="slider-label">'.esc_html($settings['termlabel']);
 					if ($settings['periodhelp']) $output .= qis_tooltip($settings['periodinfo']);
 					$output .= '</div>';
 				}
 				
 				if ($settings['termlabel'] && $settings['sliderlabelposition'] == 'beforeoutput') {
-					$label = '<span class="sliderlabel">'.$settings['termlabel'].' </span>';
+					$label = '<span class="sliderlabel">'.esc_html($settings['termlabel']).' </span>';
 				}
 				
 				$output .= '<div class="range qis-slider-term">';
@@ -708,10 +707,10 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 						if ($settings['buttons'] && $settings['sliderbuttonposition'] == 'sliderside') {
 							$output .= '<div class="qis_buttons">
 							<div class="circle-control minus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232c-13.3 0-24 10.7-24 24s10.7 24 24 24H328c13.3 0 24-10.7 24-24s-10.7-24-24-24H184z"/></svg></div>
-							<div><input type="range" name="loan-period" min="'.$settings['periodmin'].'" max="'.$settings['periodmax'].'" value="'.$formvalues['loan-period'].'" step="'.$settings['periodstep'].'" data-qis></div>
+							<div><input type="range" name="loan-period" min="'.esc_attr($settings['periodmin']).'" max="'.esc_attr($settings['periodmax']).'" value="'.esc_attr($formvalues['loan-period']).'" step="'.esc_attr($settings['periodstep']).'" data-qis></div>
 							<div class="circle-control plus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344c0 13.3 10.7 24 24 24s24-10.7 24-24V280h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H280V168c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H168c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z"/></svg></div></div>';
 						} else {
-							$output .= '<input type="range" name="loan-period" min="'.$settings['periodmin'].'" max="'.$settings['periodmax'].'" value="'.$formvalues['loan-period'].'" step="'.$settings['periodstep'].'" data-qis>';
+							$output .= '<input type="range" name="loan-period" min="'.esc_attr($settings['periodmin']).'" max="'.esc_attr($settings['periodmax']).'" value="'.esc_attr($formvalues['loan-period']).'" step="'.esc_attr($settings['periodstep']).'" data-qis>';
 						}
 						
 						if ($settings['markers']) {
@@ -723,11 +722,11 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 						$label = str_replace('[min]',$periodmin,$settings['termtext']);
 						$label = str_replace('[max]',$periodmax,$label);
 						$output .= '<div class="textlabel".>'.$label.'</div>';
-						$output .= '<div class="hidethis"><input type="range" name="loan-period" min="'.$settings['periodmin'].'" max="'.$settings['periodmax'].'" value="'.$formvalues['loan-period'].'" step="'.$settings['periodstep'].'" data-qis></div>';
+						$output .= '<div class="hidethis"><input type="range" name="loan-period" min="'.esc_attr($settings['periodmin']).'" max="'.esc_attr($settings['periodmax']).'" value="'.esc_attr($formvalues['loan-period']).'" step="'.esc_attr($settings['periodstep']).'" data-qis></div>';
 					}
 					$output .= '</div>';
 			} else {
-				$output .= '<input type="hidden" name="loan-period" value="'.$formvalues['loan-period'].'">';
+				$output .= '<input type="hidden" name="loan-period" value="'.esc_attr($formvalues['loan-period']).'">';
 			}
 				
 		}
@@ -740,16 +739,16 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	
 			// Downpayment Slider
 			if ($settings['downpaymentlabel'] && $settings['sliderlabelposition'] == 'aboveslider') {
-				$output .= '<div class="slider-label">'.$settings['downpaymentlabel'];
+				$output .= '<div class="slider-label">'.esc_html($settings['downpaymentlabel']);
 				if ($settings['downpaymenthelp']) $output .= qis_tooltip($settings['downpaymentinfo']);
 				$output .= '</div>';
 			}
 			
 			if ($settings['downpaymentlabel'] && $settings['sliderlabelposition'] == 'beforeoutput') {
-				$label = '<span class="sliderlabel">'.$settings['downpaymentlabel'].' </span>';
+				$label = '<span class="sliderlabel">'.esc_html($settings['downpaymentlabel']).' </span>';
 			}
 	
-			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.$formvalues['loan-downpayment'].'" />';
+			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.esc_attr($formvalues['loan-downpayment']).'" />';
 			elseif ($settings['outputlimits']) $oX = '<output></output>';
 			else $oX = null;
 	
@@ -766,10 +765,10 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 				if ($settings['buttons'] && $settings['sliderbuttonposition'] == 'sliderside') {
 					$output .= '<div class="qis_buttons">
 					<div class="circle-control minus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232c-13.3 0-24 10.7-24 24s10.7 24 24 24H328c13.3 0 24-10.7 24-24s-10.7-24-24-24H184z"/></svg></div>
-					<div><input type="range" name="loan-downpayment" min="'.$settings['downpaymentmin'].'" max="'.$settings['downpaymentmax'].'" value="'.$formvalues['loan-downpayment'].'" step="'.$settings['downpaymentstep'].'" data-qis></div>
+					<div><input type="range" name="loan-downpayment" min="'.esc_attr($settings['downpaymentmin']).'" max="'.esc_attr($settings['downpaymentmax']).'" value="'.esc_attr($formvalues['loan-downpayment']).'" step="'.esc_attr($settings['downpaymentstep']).'" data-qis></div>
 					<div class="circle-control plus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344c0 13.3 10.7 24 24 24s24-10.7 24-24V280h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H280V168c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H168c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z"/></svg></div></div>';
 				} else {
-					$output .= '<input type="range" name="loan-downpayment" min="'.$settings['downpaymentmin'].'" max="'.$settings['downpaymentmax'].'" value="'.$formvalues['loan-downpayment'].'" step="'.$settings['downpaymentstep'].'" data-qis>';
+					$output .= '<input type="range" name="loan-downpayment" min="'.esc_attr($settings['downpaymentmin']).'" max="'.esc_attr($settings['downpaymentmax']).'" value="'.esc_attr($formvalues['loan-downpayment']).'" step="'.esc_attr($settings['downpaymentstep']).'" data-qis>';
 				}
 				
 				if ($settings['markers']) {
@@ -781,7 +780,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 				$label = str_replace('[min]',$downpaymentmin,$settings['downpaymenttext']);
 				$label = str_replace('[max]',$downpaymentmax,$label);
 				$output .= '<div class="textlabel".>'.$label.'</div>';
-				$output .= '<div class="hidethis"><input type="range" name="loan-downpayment" min="'.$settings['downpaymentmin'].'" max="'.$settings['downpaymentmax'].'" value="'.$formvalues['loan-downpayment'].'" step="'.$settings['downpaymentstep'].'" data-qis></div>';
+				$output .= '<div class="hidethis"><input type="range" name="loan-downpayment" min="'.esc_attr($settings['downpaymentmin']).'" max="'.esc_attr($settings['downpaymentmax']).'" value="'.esc_attr($formvalues['loan-downpayment']).'" step="'.esc_attr($settings['downpaymentstep']).'" data-qis></div>';
 			}
 			$output .= '</div>';
 		}
@@ -792,20 +791,20 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 		
 			// Interest Slider
 	
-			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.$formvalues['loan-interest'].'" />';
+			if ($settings['textinputs'] != 'slider') $oX = '<input type="text" class="output" value="'.esc_attr($formvalues['loan-interest']).'" />';
 			elseif ($settings['outputlimits']) $oX = '<output></output>';
 			else $oX = null;
 			
 			if ($settings['interestslider'] && !$settings['interestselector'] && !$settings['interestdropdown']) {
 		
 				if ($settings['interestlabel'] && $settings['sliderlabelposition'] == 'aboveslider') {
-					$output .= '<div class="slider-label">'.$settings['interestlabel'];
+					$output .= '<div class="slider-label">'.esc_html($settings['interestlabel']);
 					if ($settings['interesthelp']) $output .= qis_tooltip($settings['interestinfo']);
 					$output .= '</div>';
 				}
 				
 				if ($settings['interestlabel'] && $settings['sliderlabelposition'] == 'beforeoutput') {
-					$label = '<span class="sliderlabel">'.$settings['interestlabel'].' </span>';
+					$label = '<span class="sliderlabel">'.esc_html($settings['interestlabel']).' </span>';
 				}
 		
 				$output .= '<div class="range qis-slider-interest">';
@@ -823,10 +822,10 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 					if ($settings['buttons'] && $settings['sliderbuttonposition'] == 'sliderside') {
 						$output .= '<div class="qis_buttons">
 						<div class="circle-control minus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232c-13.3 0-24 10.7-24 24s10.7 24 24 24H328c13.3 0 24-10.7 24-24s-10.7-24-24-24H184z"/></svg></div>
-						<div><input type="range" name="loan-interest" min="'.$settings['interestmin'].'" max="'.$settings['interestmax'].'" value="'.$formvalues['loan-interest'].'" step="'.$settings['intereststep'].'" data-qis></div>
+						<div><input type="range" name="loan-interest" min="'.esc_attr($settings['interestmin']).'" max="'.esc_attr($settings['interestmax']).'" value="'.esc_attr($formvalues['loan-interest']).'" step="'.esc_attr($settings['intereststep']).'" data-qis></div>
 						<div class="circle-control plus"><svg xmlns="http://www.w3.org/2000/svg" height="25px" viewBox="0 0 512 512"><path d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344c0 13.3 10.7 24 24 24s24-10.7 24-24V280h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H280V168c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H168c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z"/></svg></div></div>';
 					} else {
-						$output .= '<input type="range" name="loan-interest" min="'.$settings['interestmin'].'" max="'.$settings['interestmax'].'" value="'.$formvalues['loan-interest'].'" step="'.$settings['intereststep'].'" data-qis>';
+						$output .= '<input type="range" name="loan-interest" min="'.esc_attr($settings['interestmin']).'" max="'.esc_attr($settings['interestmax']).'" value="'.esc_attr($formvalues['loan-interest']).'" step="'.esc_attr($settings['intereststep']).'" data-qis>';
 					}
 					
 					if ($settings['markers']) {
@@ -838,7 +837,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 					$label = str_replace('[min]',$interestmin,$settings['interesttext']);
 					$label = str_replace('[max]',$interestmax,$label);
 					$output .= '<div class="textlabel".>'.$label.'</div>';
-					$output .= '<div class="hidethis"><input type="range" name="loan-interest" min="'.$settings['interestmin'].'" max="'.$settings['interestmax'].'" value="'.$formvalues['loan-interest'].'" step="'.$settings['intereststep'].'" data-qis></div>';
+					$output .= '<div class="hidethis"><input type="range" name="loan-interest" min="'.esc_attr($settings['interestmin']).'" max="'.esc_attr($settings['interestmax']).'" value="'.esc_attr($formvalues['loan-interest']).'" step="'.esc_attr($settings['intereststep']).'" data-qis></div>';
 				}
 				
 				$output .= '</div>';
@@ -847,11 +846,11 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 			// Interest Selectors
 			if ($settings['interestselector'] && $qppkey['authorised'] && !$settings['interestslider'] && !$settings['interestdropdown']) {
 				$output .= '<div class="checkradio"><ul>';
-				if ($settings['interestselectorlabel']) $output .= '<li class="label">'.$settings['interestselectorlabel'].':</li>';
+				if ($settings['interestselectorlabel']) $output .= '<li class="label">'.esc_html($settings['interestselectorlabel']).':</li>';
 				for ($i = 1; $i <= 4; $i++) {
 					if ($settings['interestname'.$i]) {
 						$checked = $i == 1 ? 'checked' : '';
-						$output .= '<li><input type="radio" name="interestselector" value="'.$i.'" '.$checked.' id="interestname'.$i.'"><label for="interestname'.$i.'"><span></span>'.$settings['interestname'.$i].'</label></li>';
+						$output .= '<li><input type="radio" name="interestselector" value="'.esc_attr($i).'" '.$checked.' id="interestname'.esc_attr($i).'"><label for="interestname'.esc_attr($i).'"><span></span>'.esc_html($settings['interestname'.$i]).'</label></li>';
 					}
 				}
 				$output .= '</ul></div>';
@@ -864,14 +863,14 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 				$arr = explode(",",$settings['interestdropdownvalues']);
 				$output .= '<div class="qis-register">';
 				if ($settings['interestdropdownlabelposition'] == 'paragraph') 
-					$output .= '<p>'.$settings['interestdropdownlabel'].'</p>';
+					$output .= '<p>'.esc_html($settings['interestdropdownlabel']).'</p>';
 					$output .= '<select name="interestdropdown">';
 				if ($settings['interestdropdownlabelposition'] == 'include')
-					$output .= '<option value="'.preg_replace("/[^0-9.]/", "", $arr[0]).'">' . $settings['interestdropdownlabel'] . '</option>'."\r\t";
+					$output .= '<option value="'.esc_attr(preg_replace("/[^0-9.]/", "", $arr[0])).'">'.esc_html($settings['interestdropdownlabel']).'</option>'."\r\t";
 				foreach ($arr as $item) {
 					$value = preg_replace("/[^0-9.]/", "", $item);
 					$selected = $formvalues['interestdropdown'] == $value ? ' selected="selected"' : '';
-					$output .= '<option value="' .	$value . '" ' . $selected .'>' .	$item . '</option>'."\r\t";
+					$output .= '<option value="'.esc_attr($value).'" '.$selected.'>'.esc_html($item).'</option>'."\r\t";
 				}
 				$output .= '</select></div>';
 			}
@@ -883,7 +882,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 			
 			if ($settings['usegraph']) {
 				
-				if ($settings['graphlabel']) $output .= '<div class="slider-label">'.$settings['graphlabel'].'</div>';
+				if ($settings['graphlabel']) $output .= '<div class="slider-label">'.esc_html($settings['graphlabel']).'</div>';
 				$output .= '<div class="qisBar">
 				<div class="qisBarProgress1" style="background-color:'.$style['graphdownpayment'].'"></div>
 				<div class="qisBarProgress2" style="background-color:'.$style['graphprinciple'].'"></div>';
@@ -894,12 +893,12 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 
 				$output .= '<div id="qis-totalbar"></div>';
 				$output .= '<p class="legend">';
-				if ($settings['usedownpayment'] || $settings['usedownpaymentslider']) $output .= '<span style="background-color:'.$style['graphdownpayment'].'"></span> '.$settings['graphdownpayment'].' ';
-				if ($settings['discount']) $output .= '<span style="background-color:'.$style['graphdiscount'].'"></span> '.$settings['graphdiscount'].' ';
-				$output .= '<span style="background-color:'.$style['graphprinciple'].'"></span> '.$settings['graphprinciple'].' ';
-				if ($settings['adminfeewhen'] == 'beforeinterest' && $settings['adminfee']) $output .= '<span style="background-color:'.$style['graphprocessing'].'"></span> '.$settings['graphprocessing'].' ';
-				$output .= '<span style="background-color:'.$style['graphinterest'].'"></span> '.$settings['graphinterest'].' ';
-				if ($settings['adminfeewhen'] == 'afterinterest' && $settings['adminfee']) $output .= '<span style="background-color:'.$style['graphprocessing'].'"></span> '.$settings['graphprocessing'].' ';
+				if ($settings['usedownpayment'] || $settings['usedownpaymentslider']) $output .= '<span style="background-color:'.esc_attr($style['graphdownpayment']).'"></span> '.esc_html($settings['graphdownpayment']).' ';
+				if ($settings['discount']) $output .= '<span style="background-color:'.esc_attr($style['graphdiscount']).'"></span> '.esc_html($settings['graphdiscount']).' ';
+				$output .= '<span style="background-color:'.esc_attr($style['graphprinciple']).'"></span> '.esc_html($settings['graphprinciple']).' ';
+				if ($settings['adminfeewhen'] == 'beforeinterest' && $settings['adminfee']) $output .= '<span style="background-color:'.esc_attr($style['graphprocessing']).'"></span> '.esc_html($settings['graphprocessing']).' ';
+				$output .= '<span style="background-color:'.esc_attr($style['graphinterest']).'"></span> '.esc_html($settings['graphinterest']).' ';
+				if ($settings['adminfeewhen'] == 'afterinterest' && $settings['adminfee']) $output .= '<span style="background-color:'.esc_attr($style['graphprocessing']).'"></span> '.esc_html($settings['graphprocessing']).' ';
 				$output .= '</p>';
 			}
 		}
@@ -925,7 +924,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	
 			// Apply Now and Application Form
 			if ($register['application'] && $qppkey['authorised']) $output .= qis_display_form($formvalues,$formerrors,$registered).'</div>';
-			elseif ($settings['applynow'] && $qppkey['authorised']) $output .= '<div class="qis-apply"><a id="applybutton" href="'.$settings['applynowaction'].'" >'.$settings['applynowlabel'].'</a></div>';
+			elseif ($settings['applynow'] && $qppkey['authorised']) $output .= '<div class="qis-apply"><a id="applybutton" href="'.esc_url($settings['applynowaction']).'">'.esc_html($settings['applynowlabel']).'</a></div>';
 		}
 	
 		$output .= $settings['outputtable'];
@@ -954,7 +953,7 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 		// Apply Now and Application Form
 	
 		if ($register['application'] && $qppkey['authorised']) $output .= qis_display_form($formvalues,$formerrors,$registered).'</div>';
-		elseif ($settings['applynow'] && $qppkey['authorised']) $output .= '<div class="qis-apply"><a id="applybutton" href="'.$settings['applynowaction'].'" >'.$settings['applynowlabel'].'</a></div>';
+		elseif ($settings['applynow'] && $qppkey['authorised']) $output .= '<div class="qis-apply"><a id="applybutton" href="'.esc_url($settings['applynowaction']).'">'.esc_html($settings['applynowlabel']).'</a></div>';
 		
 		// Close .qis-float
 		$output .= '</div>';
@@ -962,10 +961,10 @@ function qis_display($atts,$formvalues,$formerrors,$registered) {
 	
 	$output .= '</div>';
 	
-	$output .= '<input type="hidden" name="repayment" value="'.@$formvalues['repayment'].'" />';
-	$output .= '<input type="hidden" name="totalamount" value="'.@$formvalues['totalamount'].'" />';
-	$output .= '<input type="hidden" id="formname" name="formname" value="'.$formvalues['formname'].'" />';
-	$output .= '<input type="hidden" id="calculatorname" name="calculatorname" value="'.$atts['calculatorname'].'" />';
+	$output .= '<input type="hidden" name="repayment" value="'.esc_attr( @$formvalues['repayment'] ).'" />';
+	$output .= '<input type="hidden" name="totalamount" value="'.esc_attr( @$formvalues['totalamount'] ).'" />';
+	$output .= '<input type="hidden" id="formname" name="formname" value="'.esc_attr( $formvalues['formname'] ).'" />';
+	$output .= '<input type="hidden" id="calculatorname" name="calculatorname" value="'.esc_attr( $atts['calculatorname'] ).'" />';
 	$output .= '<input type="hidden" name="rate" value="" />';
 	$output .= '<div id="filechecking"><div class="filecheckingcontent"><img src="'.plugin_dir_url( __FILE__ ).'/img/waiting.gif'.'" alt="Loading"></div></div>'; //  phpcs:ignore PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage
 
@@ -1058,7 +1057,7 @@ function qis_scripts() {
 
 function qis_plugin_action_links($links, $file ) {
 	if ( $file == plugin_basename( __FILE__ ) ) {
-		$qis_links = '<a href="'.get_admin_url().'options-general.php?page=quick-interest-slider-settings">'.__('Settings','quick-interest-slider').'</a>';
+		$qis_links = '<a href="'.esc_url( get_admin_url().'options-general.php?page=quick-interest-slider-settings' ).'">'.__('Settings','quick-interest-slider').'</a>';
 		array_unshift( $links, $qis_links );
 		}
 	return $links;
@@ -1186,26 +1185,26 @@ function qis_subscribe() {
 	$message = get_option('qis_messages');
 	
 	$auto = qis_get_stored_autoresponder(null);
-	if ( isset ($_GET['sub']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$ref = $_GET['sub']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if ( isset ($_GET['sub']) ) {
+		$ref = sanitize_text_field( wp_unslash( $_GET['sub'] ) );
 		foreach ($message as $key => $value ) {
 			if ($ref == $value['timestamp'] && $value['confirmed'] != true) {
 				if ($auto['notification']) qis_send_notification ($value);
 				$message[$key]['confirmed'] = true;
 				update_option('qis_messages',$message);
-				return '<div class="emailresponse">'.$auto['subscribemessage'].'</div>';
+				return '<div class="emailresponse">'.esc_html($auto['subscribemessage']).'</div>';
 			}
 		}
-		return '<div class="emailresponse">'.$auto['subscribealready'].'</div>';
+		return '<div class="emailresponse">'.esc_html($auto['subscribealready']).'</div>';
 	}
-	if ( isset ($_GET['unsub']) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$ref = $_GET['unsub']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if ( isset ($_GET['unsub']) ) {
+		$ref = sanitize_text_field( wp_unslash( $_GET['unsub'] ) );
 		foreach ($message as $key => $value )	{
 			if ($ref == $value['timestamp']) {
 				unset($value);
 				$message = array_values($message);
 				update_option('qis_messages',$message);
-				return '<div class="emailresponse">'.$auto['unsubscribemessage'].'</div>';
+				return '<div class="emailresponse">'.esc_html($auto['unsubscribemessage']).'</div>';
 			}
 		}
 		return '<div class="emailresponse">You have already unsubscribed</div>';
@@ -1221,9 +1220,9 @@ function qis_show_progress() {
 	$progress = qis_get_stored_progress();
 	
 	if (!empty($_POST['showprogress']) && check_admin_referer("save_qis")) {
-		$formvalues = $_POST;
-		$formvalues['youremail'] = filter_var($formvalues['youremail'],FILTER_SANITIZE_EMAIL);
-		$formvalues['reference'] = htmlentities($formvalues['reference']);
+		$formvalues = array_map( 'sanitize_text_field', wp_unslash( $_POST ) );
+		$formvalues['youremail'] = sanitize_email( wp_unslash( $_POST['youremail'] ) );
+		$formvalues['reference'] = sanitize_text_field( wp_unslash( $_POST['reference'] ) );
 		
 		$message = get_option('qis_messages');
 		
@@ -1232,10 +1231,10 @@ function qis_show_progress() {
 				$register = qis_get_stored_register(1);
 				$content	= '<div class="qis-register">';
 				if ($progress['showdetails']) {
-					$content .= '<h2>'.$progress['loanlabel'].'</h2>';
+					$content .= '<h2>'.esc_html($progress['loanlabel']).'</h2>';
 					$content .= qis_build_message($key,$register);
 				}
-				$content .= '<h2>'.$progress['progresslabel'].'</h2>';
+				$content .= '<h2>'.esc_html($progress['progresslabel']).'</h2>';
 				$content .= '<p>';
 				$steps = explode(",",$progress['progresssteps']);
 				$stop = false;
@@ -1245,28 +1244,28 @@ function qis_show_progress() {
 				}
 				foreach ($steps as $item) {
 					if ($progress['currentstep']) {
-						$background = $item == $key['progress'] ? ' style="background-color:'.$progress['highlight'].';"' : ' style="background-color:'.$progress['background'].';"';
+						$background = $item == $key['progress'] ? ' style="background-color:'.esc_attr($progress['highlight']).';"' : ' style="background-color:'.esc_attr($progress['background']).';"';
 					} else {
-						$background = $stop ? ' style="background-color:'.$progress['background'].';"' : ' style="background-color:'.$progress['highlight'].';"';
+						$background = $stop ? ' style="background-color:'.esc_attr($progress['background']).';"' : ' style="background-color:'.esc_attr($progress['highlight']).';"';
 						if ($item == $key['progress']) $stop = true;	
 					}	
-					$content .= '<span class="step"'.$background.'>'.$item.'</span>';
+					$content .= '<span class="step"'.$background.'>'.esc_html($item).'</span>';
 				}
 				$content .= '</p>';
 				$content .= '</div>';
 			}
 		}
 		if ($content) return $content;
-		else return '<h2>'.$progress['nothingfound'].'</h2>';
+		else return '<h2>'.esc_html($progress['nothingfound']).'</h2>';
 	}
 	
 	$content .= '<form action="" method="POST" class="qis-register">
-	<p>'.$progress['emaillabel'].'<br>
+	<p>'.esc_html($progress['emaillabel']).'<br>
 	<input type="email" name="youremail" value=""></p>
-	<p>'.$progress['referencelabel'].'<br>
+	<p>'.esc_html($progress['referencelabel']).'<br>
 	<input type="text" name="reference" value=""></p>
-	<p><input onClick="check();" type="submit" value="'.$progress['submitlabel'].'" class="submit" name="showprogress" /><p>
-	<input type="hidden" name="anything" value="'. gmdate('Y-m-d H:i:s').'">
+	<p><input onClick="check();" type="submit" value="'.esc_attr($progress['submitlabel']).'" class="submit" name="showprogress" /><p>
+	<input type="hidden" name="anything" value="'. esc_attr(gmdate('Y-m-d H:i:s')).'">
 	<div class="validator">Enter the word YES in the box: <input type="text" style="width:3em" name="validator" value=""></div>';
 	$content .= wp_nonce_field("save_qis");
 	$content .= '</form>';
@@ -1315,10 +1314,9 @@ function qis_build_registration_table ($message,$report,$qis_edit,$selected) {
 	<tr>
 	<th>'.__('Reference', 'quick-interest-slider').'</th>';
 	foreach ($arr as $item) {
-		if ($register['use'.$item]) $dashboard .= '<th>'.$register['your'.$item].'</th>';
+		if ($register['use'.$item]) $dashboard .= '<th>'.esc_html($register['your'.$item]).'</th>';
 	}
 	$dashboard .= '<th>'.__('Amount', 'quick-interest-slider').'</th><th>Period</th>';
-	if ($register['useattachment']) $dashboard .= '<th>Attachments</th>';
 	$dashboard .= '<th>'.__('Date Sent', 'quick-interest-slider').'</th>';
 	if ($progress['enabled']) $dashboard .= '<th>Progress</th>';
 	if (!$report) $dashboard .= '<th></th>';
@@ -1328,47 +1326,46 @@ function qis_build_registration_table ($message,$report,$qis_edit,$selected) {
 	foreach($message as $value) {
 		$span = ($value['reference'] && !$value['confirmed']) ? ' style="font-style:italic;color:#ccc;"' : '';
 		$content .= '<tr'.$span.'>
-		<td>'.$value['reference'].'</td>';
+		<td>'.esc_html($value['reference']).'</td>';
 		foreach ($arr as $item) {
 			if ($register['use'.$item]) {
 				if (isset($value['yourconsent']) && $value['yourconsent']) $value['yourconsent'] = 'checked';
 				$content .= '<td>';
-				if ( ($qis_edit == 'selected' && $selected[$i]) || $qis_edit == 'all') $content .= '<input style="width:100%" type="text" value="'.$message[$i]['your'.$item].'" name="message['.$i.'][your'.$item.']">';
-				elseif (isset($value['your'.$item])) $content .= $value['your'.$item];
+				if ( ($qis_edit == 'selected' && $selected[$i]) || $qis_edit == 'all') $content .= '<input style="width:100%" type="text" value="'.esc_attr($message[$i]['your'.$item]).'" name="message['.esc_attr($i).'][your'.esc_attr($item).']">';
+				elseif (isset($value['your'.$item])) $content .= esc_html($value['your'.$item]);
 				else $content .= '';
 				$content .= '</td>';
 			}
 		}
 		if ( ($qis_edit == 'selected' && $selected[$i]) || $qis_edit == 'all') {
-			$content .= '<td><input style="width:100%" type="text" value="'.$message[$i]['loan-amount'].'" name="message['.$i.'][loan-amount]"></td>
-			<td><input style="width:100%" type="text" value="'.$message[$i]['loan-period'].'" name="message['.$i.'][loan-period]"></td>';
+			$content .= '<td><input style="width:100%" type="text" value="'.esc_attr($message[$i]['loan-amount']).'" name="message['.$i.'][loan-amount]"></td>
+			<td><input style="width:100%" type="text" value="'.esc_attr($message[$i]['loan-period']).'" name="message['.$i.'][loan-period]"></td>';
 		} else {
-			$content .= '<td>'.$value['loan-amount'].'</td><td>'.$value['loan-period'].'</td>';
+			$content .= '<td>'.esc_html($value['loan-amount']).'</td><td>'.esc_html($value['loan-period']).'</td>';
 		}
 		if ($value['yourname']) $charles = 'messages';
 		
 		/*
 		if ($register['useattachment']) {
-			$content .= $value['attachment'] ? '<td><a href="'.$value['attachment'].'" target="_blank">View</a></td>' : '<td></td>';
+			$content .= $value['attachment'] ? '<td><a href="'.esc_url($value['attachment']).'" target="_blank">View</a></td>' : '<td></td>';
 		}
 		*/
 		
-		if ($register['useattachment']) $content .= qis_message_thumbs($value);
-		$content .= '<td>'.$value['sentdate'].'</td>';
+		$content .= '<td>'.esc_html($value['sentdate']).'</td>';
 		
 		if ($progress['enabled']) {
 			if ( ($qis_edit == 'selected' && $selected[$i]) || $qis_edit == 'all') {
 				$content .= '<td>';
 				$steps = explode(",",$progress['progresssteps']);
-				$content .= '<select name="message['.$i.'][progress]">';
-				if ($message[$i]['progress']) $content .= '<option value="'.$message[$i]['progress'].'">'.$message[$i]['progress'].'</option>';
+				$content .= '<select name="message['.esc_attr($i).'][progress]">';
+				if ($message[$i]['progress']) $content .= '<option value="'.esc_attr($message[$i]['progress']).'">'.esc_html($message[$i]['progress']).'</option>';
 				foreach ($steps as $item) {
-					$content .= '<option value="' .	$item . '">' .	$item . '</option>'."\r\t";
+					$content .= '<option value="'.esc_attr($item).'">'.esc_html($item).'</option>'."\r\t";
 				}
 				$content .= '</select></div>';
 				$content .= '</td>';
 			} else {
-				$content .= '<td>'.$message[$i]['progress'].'</td>';
+				$content .= '<td>'.esc_html($message[$i]['progress']).'</td>';
 			}
 		}
 		
@@ -1381,17 +1378,11 @@ function qis_build_registration_table ($message,$report,$qis_edit,$selected) {
 	if ($charles) return $dashboard;
 }
 
-// Languages
-
-function qis_lang_init() {
-	load_plugin_textdomain( 'quick-interest-slider', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-}
-
 // Upgrade IPN function
 
 function qis_upgrade_ipn() {
 	$qppkey = qis_key();
-	if (!isset($_POST['custom']) || $qppkey['authorised']) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (!isset($_POST['custom']) || $qppkey['authorised'])
 		return;
 	$raw_post_data = file_get_contents('php://input');
 	$raw_post_array = explode('&', $raw_post_data);
@@ -1443,7 +1434,7 @@ function qis_upgrade_ipn() {
 	$tokens = explode("\r\n\r\n", trim($res));
 	$res = trim(end($tokens));
 
-	if (strcmp ($res, "VERIFIED") == 0 && $qppkey['key'] == $_POST['custom']) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	if (strcmp ($res, "VERIFIED") == 0 && $qppkey['key'] == $_POST['custom']) {
 		$qppkey['authorised'] = 'true';
 		update_option('qpp_key',$qppkey);
 		$qpp_setup = qp_get_stored_setup();
@@ -1465,10 +1456,13 @@ function qis_current_page_url() {
 		$pageURL .= "s";
 	}
 	$pageURL .= "://";
-	if (($_SERVER["SERVER_PORT"] != "80") && ($_SERVER['SERVER_PORT'] != '443')) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$server_name = isset($_SERVER["SERVER_NAME"]) ? sanitize_text_field( wp_unslash( $_SERVER["SERVER_NAME"] ) ) : '';
+	$server_port = isset($_SERVER["SERVER_PORT"]) ? sanitize_text_field( wp_unslash( $_SERVER["SERVER_PORT"] ) ) : '';
+	$request_uri = isset($_SERVER["REQUEST_URI"]) ? sanitize_text_field( wp_unslash( $_SERVER["REQUEST_URI"] ) ) : '';
+	if (($server_port != "80") && ($server_port != '443'))
+		$pageURL .= $server_name.":".$server_port.$request_uri;
 	else 
-		$pageURL .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$pageURL .= $server_name.$request_uri;
 	return $pageURL;
 }
 
