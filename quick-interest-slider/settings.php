@@ -27,7 +27,6 @@ function qis_admin_tabs($current = 'settings') {
 		$tabs = array(
 			'settings'		=> __('Settings', 'quick-interest-slider'),
 			'application'	=> __('Application Form', 'quick-interest-slider'),
-			'parttwo'		=> __('Full Application', 'quick-interest-slider'),
 			'auto'			=> __('Auto Responder', 'quick-interest-slider'),
 			'dropdown'		=> __('Selector', 'quick-interest-slider'),
 			'tracking'		=> __('Tracking', 'quick-interest-slider'),
@@ -70,7 +69,6 @@ function qis_tabbed_page() {
 		case 'settings' : qis_settings (); break;
 		case 'application' : qis_register (); break;
 		case 'auto' : qis_autoresponse_page(); break;
-		case 'parttwo' : qis_application(); break;
 		case 'outputs' : qis_outputtable(); break;
 		case 'dropdown' : qis_setdropdowns(); break;
 		case 'tracking' : qis_progress(); break;   
@@ -802,15 +800,6 @@ function qis_settings(){
 	<p'.$hideline.'>'.__('Repayment date format', 'quick-interest-slider').':&nbsp;<input type="radio" name="periodformat" value="US" ' . $US . ' />MM'.$settings['dateseperator'].'DD'.$settings['dateseperator'].'YYYY&nbsp;&nbsp;&nbsp;<input type="radio" name="periodformat" value="EU" ' . $EU . ' />DD'.$settings['dateseperator'].'Mmm'.$settings['dateseperator'].'YYYY&nbsp;&nbsp;&nbsp;<input type="radio" name="periodformat" value="monthnum" ' . $monthnum . ' />DD'.$settings['dateseperator'].'MM'.$settings['dateseperator'].'YYYY&nbsp;&nbsp;&nbsp;'.__('Date Seperator', 'quick-interest-slider').': <input type="text" style="width:2em;" name="dateseperator" value ="' . $settings['dateseperator'] . '" /></p>
 	
 	</fieldset>';
-	
-	//Currencies
-	
-	if ($qppkey['authorised'] && isset($settings['usefx'])) {
-		$content .= '<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-bottom:10px;">
-		<h2>'.__('Currency Selectors and Foreign Exchange', 'quick-interest-slider').'</h2>';
-		$content .= '<p>The API I used to calculate the FX no longers works. This means I have had to remove this feature. If you really need FX please contact me and I can investigate alternate methods but sadly the ones I\'ve looked at so far are not free</p>">';
-		$content .= '</fieldset>';
-	}
 	
 	// Loan Breakdown
 	
@@ -1572,8 +1561,8 @@ function qis_register() {
 		<h2>'.__('Form Fields', 'quick-interest-slider').'</h2>
 		<p>'.__('Check those fields you want to use. Drag and drop to change the order', 'quick-interest-slider').'.</p>
 		<style>table#sorting{width:100%;}
-		#sorting tbody tr{outline: 1px solid #888;background:#E0E0E0;}
-		#sorting tbody td{padding: 2px;vertical-align:middle;}
+		#sorting tbody tr{outline: 1px solid #888;background:#cccccc;}
+		#sorting tbody td{padding: 4px;vertical-align:middle;}
 		#sorting{border-collapse:separate;border-spacing:0 5px;}</style>
 		<script>
 		jQuery(function() 
@@ -1646,7 +1635,7 @@ function qis_register() {
 					$use = 'usechecks';
 					$label = __('Checkboxes', 'quick-interest-slider');
 					$input = 'checkboxeslabel';
-					$addon = '&nbsp <input type="text" style="width:20%;" name="check1" value ="' . $register['check1'] . '" />&nbsp<input type="text" style="width:20%;" name="check2" value ="' . $register['check2'] . '" />&nbsp<input type="text" style="width:20%;" name="check3" value ="' . $register['check3'] . '" />';
+					$addon = '<input type="text" style="width:20%;" name="check1" value ="' . $register['check1'] . '" />&nbsp<input type="text" style="width:20%;" name="check2" value ="' . $register['check2'] . '" />&nbsp<input type="text" style="width:20%;" name="check3" value ="' . $register['check3'] . '" />';
 					$type= 'text';
 				break;
 				case 'field9':
@@ -2014,320 +2003,6 @@ function qis_register() {
 	echo $content; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	
 	// echo wp_kses( $content,$allowed_html);
-}
-
-function qis_application (){
-	
-	$allowed_html = qis_allowed_html();
-	
-	$termstarget=false;
-	$advanced = $one = $two = $three = $four = $five = false;
-	
-	$formnumber = get_option('qis_formnumber');
-	$theform  = (!$formnumber || $formnumber == 1) ? 1 : $formnumber;
-	
-	$application = qis_get_stored_application($theform);
-	
-	if( isset( $_POST['Submit']) && check_admin_referer("save_qis")) {
-		$option = array (
-			'loanreason',
-			'repaymentmeans',
-			'dateofbirth',
-			'maritalstatus',
-			'gender',
-			'dependants',
-			'preferedtime',
-			'homephone',
-			'homename',
-			'homeaddress',
-			'hometown',
-			'homepostcode',
-			'hometype',
-			'hometime',
-			'billsfood',
-			'billrecreation',
-			'billsloans',
-			'billsother',
-			'billsotheramount',
-			'workcompany',
-			'workemployer',
-			'worktitle',
-			'workincome',
-			'workduration',
-			'workbank',
-			'additionalincome',
-			'bankname',
-			'bankaccount',
-			'banksort',
-			'bankiban',
-			'bankaddress',
-			'bankcountry',
-			'bankswift',
-			'terms',
-			'accuracy',
-			'documents',
-			'identityproof',
-			'addressproof',
-			'oldhomename',
-			'oldhomeaddress',
-			'oldhometown',
-			'oldhomepostcode',
-			'oldhometype',
-			'oldhometime',
-		);
-		
-		$fields = array(
-			'use',
-			'label',
-			'required',
-			'options'
-		);
-		$newApplication = array();
-		/*
-			Create Blank Application
-		*/
-		foreach ($option as $iA) {
-			foreach ($fields as $field) {
-				$newApplication[$iA][$field] = '';
-			}
-		}
-		
-		/*
-			Loop through POST Variables
-		*/
-		foreach ($_POST['application'] as $iB => $iV) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			if (in_array($iB,$option)) {
-				$na = array();
-				foreach ($iV as $field => $fV) {
-					$newApplication[$iB][$field] = stripslashes($fV);
-				}
-			}
-		}
-		
-		$application = qis_get_stored_application($theform);
-		
-		/*
-			Splice the data together
-		*/
-		
-		$app = qis_splice($newApplication,$application);
-		update_option('qis_full_application'.$theform, $app);
-		
-		// Update the messages
-		$options = array(
-			'enable',
-			'part2title',
-			'part2blurb',
-			'part2submit',
-			'thankyoutitle',
-			'thankyoublurb',
-			'borrowvalues',
-			'reference',
-			'changedetails',
-			'errortitle',
-			'errorblurb',
-			'attach_size',
-			'attach_type',
-			'attach_error_size',
-			'attach_error_type',
-			'section1',
-			'section2',
-			'section3',
-			'section4',
-			'section5',
-			'section6',
-			'section7',
-			'section8',
-			'section9',
-			'section8description',
-			'use1',
-			'use2',
-			'use3',
-			'use4',
-			'use5',
-			'use6',
-			'use7',
-			'use8',
-			'use9'
-		);
-		
-		$messages = array();
-			foreach ($options as $item) {
-				$messages[$item] = stripslashes(@$_POST[$item]); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-				$messages[$item] = htmlentities($messages[$item]);
-			}
-		update_option('qis_application'.$theform, $messages);
-		
-		qis_admin_notice(__('The application form settings have been updated', 'quick-interest-slider'));
-	}
-	
-	if( isset( $_POST['changeform'])) {
-		$qisform = $theform = $_POST['calculator']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		update_option( 'qis_formnumber', $qisform);
-	}
-	
-	// Reset the forms
-	if( isset( $_POST['Reset']) && check_admin_referer("save_qis")) {
-		delete_option('qis_full_application'.$theform);
-		delete_option('qis_application'.$theform);
-		qis_admin_notice(__('The application form settings have been reset', 'quick-interest-slider'));
-	}
-	
-	$arr = $application = qis_get_stored_application($theform);
-	$register = qis_get_stored_application_messages($theform);
-	
-	${$theform} = 'checked';
-	
-	$qppkey = qis_key();
-	
-	$content ='<div class="qis-settings">';
-	if (!$qppkey['authorised']) {
-		$content .= '<div class="qis-options">
-		<h2 style="color:#B52C00">'.__('Application Form', 'quick-interest-slider').'</h2>
-		<p>'.__('Add a two part form to the loan calculator to allow visitors to apply for a loan', 'quick-interest-slider').'.</p>
-		<p>'.__('The application form is only available in the pro version of the plugin', 'quick-interest-slider').'.</p>
-		<h3><a href="?page=quick-interest-slider-settings&tab=upgrade">'.__('Upgrade to Pro', 'quick-interest-slider').'</a></h3></div>';
-	} else {
-		$content .= '<form id="" method="post" action="">
-		<div class="qis-options">';
-		
-		if (isset($qppkey['authorised']) && $qppkey['authorised']) {
-			$content .='<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-bottom:10px;">
-			<h2>'.__('Form Selection', 'quick-interest-slider').'</h2>
-			<p><select name="calculator">';
-			for ($i= 1; $i<=25; $i++) {
-				$selected = $theform == $i ? ' selected' : '';
-				$content .='<option value="'.$i.'"'.$selected.'>Table '.$i.'</option>';
-			}
-			$content .='</select > <input type="submit" name="changeform" class="button-secondary" value="Change Form" /></p>
-			</fieldset>';
-		}
-		
-		$content .= '<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-			
-			<h2>'.__('This option is no longer supported', 'quick-interest-slider').'</h2>
-			<p>'.__('It just got too complicated to look after so I built a standalone form that works much better', 'quick-interest-slider').'. <a href="https://applicationform.loanpaymentplugin.com/">'.__('See the demo', 'quick-interest-slider').'.</p>
-			<p>'.__('But if you still want to give it a go', 'quick-interest-slider').':</p>
-			<p><input type="checkbox" name="enable" ' . $register['enable'] . ' value="checked" /> '.__('Enable Application Form', 'quick-interest-slider').'.</p>
-		
-		</fieldset>
-		
-		<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-			
-			<p>'.__('Form Title', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="part2title" value="' . $register['part2title'] . '" /></p>
-			<p>'.__('Form Blurb', 'quick-interest-slider').'</p>
-			<p><textarea style="width:100%;height:100px;" name="part2blurb">' . $register['part2blurb'] . '</textarea></p>
-			<p>'.__('Submit Button', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="part2submit" value="' . $register['part2submit'] . '" /></p>
-		
-		</fieldset>';
-		
-		for($i = 1; $i < 10; $i++) {
-			$content .= '<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-			
-			<h2>'.__('Section', 'quick-interest-slider').' '.$i.' - '.$register['section'.$i].'</h2>
-			<p><input type="checkbox" name="use'.$i.'" ' . $register['use'.$i] . ' value="checked" /> Use section '.$i.'</p>
-			<p>'.__('Title', 'quick-interest-slider').':<input type="text" name="section'.$i.'"  value="' . $register['section'.$i] . '" /></p>';
-			if ($register['section'.$i.'description']) $content .= '<p>'.__('Description', 'quick-interest-slider').':<input type="text" name="section'.$i.'description"  value="' . $register['section'.$i.'description'] . '" /></p>';
-			
-			$content .= '<p>'.__('Fields', 'quick-interest-slider').':</p>
-			<table width="100%">
-			<tr><th width="5%">'.__('Use', 'quick-interest-slider').'</th><th width="5%">'.__('Req', 'quick-interest-slider').'</th><th width="10%">'.__('Type', 'quick-interest-slider').'</th><th>'.__('Label/Options', 'quick-interest-slider').'</th></tr>';
-			foreach ($arr as $key => $value) {
-				if ($application[$key]['section'] == $i) {
-					if ($application[$key]['type'] == 'text' || $application[$key]['type'] == 'date' || $application[$key]['type'] == 'checkbox') {
-						$content .= '<tr>
-						<td><input type="checkbox" name="application['.$key.'][use]" ' . $application[$key]['use'] . ' value="checked" /></td>
-						<td><input type="checkbox" name="application['.$key.'][required]" ' . $application[$key]['required'] . ' value="checked" /></td>
-						<td>'.$application[$key]['type'].'</td>
-						<td><input name="application['.$key.'][label]" type="text" value="'.$application[$key]['label'].'" /></td>
-						</tr>';
-					}
-					if ($application[$key]['type'] == 'link') {
-						$content .= '<tr>
-						<td><input type="checkbox" name="application['.$key.'][use]" ' . $application[$key]['use'] . ' value="checked" /></td>
-						<td><input type="checkbox" name="application['.$key.'][required]" ' . $application[$key]['required'] . ' value="checked" /></td><td>'.$application[$key]['type'].'</td><td><input name="application['.$key.'][label]" type="text" value="'.$application[$key]['label'].'" /></td>
-						</tr>
-						<tr>
-						<td></td>
-						<td></td>
-						<td></td>
-						<td><input name="application['.$key.'][termsurl]" type="text" value="'.$application[$key]['termsurl'].'" /></td>
-						</tr>
-						<tr>
-						<td></td>
-						<td></td>
-						<td></td>
-						<td><input type="checkbox" name="application['.$key.'][termstarget]" ' . $application[$key]['termstarget'] . ' value="checked" /> Open in new tab</td>
-						</tr>';
-					}
-					if ($application[$key]['type'] == 'multi' || $application[$key]['type'] == 'dropdown' || $application[$key]['type'] == 'upload') {
-						$content .= '<tr>
-						<td width="5%"><input type="checkbox" name="application['.$key.'][use]" ' . $application[$key]['use'] . ' value="checked" /></td>
-						<td width="5%"><input type="checkbox" name="application['.$key.'][required]" ' . $application[$key]['required'] . ' value="checked" /></td>
-						<td>'.$application[$key]['type'].'</td><td><input name="application['.$key.'][label]" type="text" value="'.$application[$key]['label'].'" /></td>
-						</tr>
-						<tr>
-						<td></td>
-						<td></td>
-						<td></td>
-						<td><input name="application['.$key.'][options]" type="text" value="'.$application[$key]['options'].'" /></td>
-						</tr>';
-					}
-				}
-			}
-			$content .= '</table>
-			
-			</fieldset>';
-		}
-		$content .= '<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-		
-			<h2>'.__('Reference Messages', 'quick-interest-slider').'</h2>
-			<p>'.__('Loan values', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="borrowvalues" value="' . $register['borrowvalues'] . '" /></p>
-			<p>'.__('Change loan button', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="changedetails" value="' . $register['changedetails'] . '" /></p>
-			<p>'.__('Loan Values', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="reference" value="' . $register['reference'] . '" /></p>
-			
-			<h2>'.__('Thank you and Error Messages', 'quick-interest-slider').'</h2>
-			<p>'.__('Thank-you Title', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="thankyoutitle" value="' . $register['thankyoutitle'] . '" /></p>
-			<p>'.__('Thank-you blurb', 'quick-interest-slider').'</p>
-			<p><textarea style="width:100%;height:100px;" name="thankyoublurb">' . $register['thankyoublurb'] . '</textarea></p>
-			<p>'.__('Error Title', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="errortitle" value="' . $register['errortitle'] . '" /></p>
-			<p>'.__('Error Message', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="errorblurb" value="' . $register['errorblurb'] . '" /></p>
-		
-		</fieldset>
-		
-		<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-			
-			<h2>'.__('Attachment Data', 'quick-interest-slider').'</h2>
-			<p>'.__('Permitted filetypes', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="attach_type" value="' . $register['attach_type'] . '" /></p>
-			<p>'.__('Error message', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="attach_error_type" value="' . $register['attach_error_type'] . '" /></p>
-			<p>'.__('Max file size', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="attach_size" value="' . $register['attach_size'] . '" /></p>
-			<p>'.__('Error message', 'quick-interest-slider').'</p>
-			<p><input type="text" style="" name="attach_error_size" value="' . $register['attach_error_size'] . '" /></p>
-		
-		</fieldset>
-		
-		<fieldset style="border: 1px solid #c3c4c7;padding:10px;margin-top:10px;">
-		
-			<p><input type="submit" name="Submit" class="button-primary" style="color: #FFF;" value="'.__('Save Settings', 'quick-interest-slider').'" /> <input type="submit" name="Reset" class="button-secondary" value="'.__('Reset Settings', 'quick-interest-slider').'" onclick="return window.confirm( \'Are you sure you want to reset?\' );"/></p>
-		
-		</fieldset>';
-		$content .= wp_nonce_field("save_qis");
-		$content .= '</form></div>';   
-	}
-	echo $content; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	
-	//echo wp_kses( $content,$allowed_html);
 }
 
 function qis_autoresponse_page() {
@@ -2799,8 +2474,8 @@ function qis_outputtable (){
 		<h2>'.__('Output Table', 'quick-interest-slider').'</h2>
 		<p>'.__('Check those outputs you want to use. Drag and drop to change the order', 'quick-interest-slider').'.</p>
 		<style>table#sorting{width:100%;}
-		#sorting tbody tr{outline: 1px solid #888;background:#E0E0E0;}
-		#sorting tbody td{padding: 2px;vertical-align:middle;}
+		#sorting tbody tr{outline: 1px solid #888;background:#cccccc;}
+		#sorting tbody td{padding: 4px;vertical-align:middle;}
 		#sorting{border-collapse:separate;border-spacing:0 5px;}</style>
 		<script>
 		jQuery(function() 

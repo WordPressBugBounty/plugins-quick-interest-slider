@@ -469,6 +469,9 @@ function qis_process_form($values) {
 	$values['sentdate'] = date_i18n('d M Y');
 	$values['progress'] = $progresssteps[0];
 	$values['timestamp'] = time();
+	// Unguessable per-record token used to authorise subscribe/unsubscribe
+	// requests instead of the easily brute-forced submission timestamp.
+	$values['unsub_token'] = wp_generate_password( 32, false );
 	$values['qis-copy'] = isset($values['qis-copy']) ? true : false;
 	
 	if ($auto['noconfirmation']) $values['confirmed'] = true;
@@ -528,7 +531,8 @@ function qis_process_form($values) {
 			'sentdate',
 			'progress',
 			'confirmed',
-			'timestamp'
+			'timestamp',
+			'unsub_token'
 			
 		);
 	
@@ -643,8 +647,8 @@ function qis_send_confirmation ($auto,$values,$content,$register) {
 	$msg = str_replace('[repayment]', $settings['cb'].$values['repayment'].$settings['ca'], $msg);
 	$msg = str_replace('[totalamount]', $settings['cb'].$values['totalamount'].$settings['ca'], $msg);
 	$msg = str_replace('[rate]', $values['rate'].'%', $msg);
-	$msg = str_replace('[unsubscribe]', '<a href="'.$auto['subscribelink'].'?unsub='.$values['timestamp'].'">'.$auto['unsubscribeanchor'].'</a>', $msg);
-	$msg = str_replace('[subscribe]', '<a href="'.$auto['subscribelink'].'?sub='.$values['timestamp'].'">'.$auto['subscribeanchor'].'</a>', $msg);
+	$msg = str_replace('[unsubscribe]', '<a href="'.$auto['subscribelink'].'?unsub='.rawurlencode( $values['unsub_token'] ).'">'.$auto['unsubscribeanchor'].'</a>', $msg);
+	$msg = str_replace('[subscribe]', '<a href="'.$auto['subscribelink'].'?sub='.rawurlencode( $values['unsub_token'] ).'">'.$auto['subscribeanchor'].'</a>', $msg);
 	
 	$copy .= '<html>' . $msg;
 	if ($auto['useregistrationdetails'] || $values['qis-copy']) {
@@ -829,244 +833,6 @@ function qis_nice_label($id,$type,$label,$labelType,$error,$value) {
 	
 	return $returning;
 	
-}
-
-// Part 2 application
-function qis_display_application( $values, $errors,$applied) {
-	
-	$application = qis_get_stored_application($values['formname']);
-	$partone = qis_get_stored_register($values['formname']);
-	$register = qis_get_stored_application_messages($values['formname']);
-	$formnumber = $values['formname'];
-	$settings = qis_get_stored_settings($formnumber);
-	$arr = array_keys($application);
-	
-	$content = '<form action="" method="POST" enctype="multipart/form-data">
-	<div class="applicationform">';
-	
-	if (count($errors) > 0) {
-			$content .= '<h2>' . $register['errortitle'] . '</h2>';
-			$content .= "<p class='qis-error-message'>" . $register['errorblurb'] . "</p>\r\t";
-	} else {
-		if (!empty($register['part2title'])) {
-			$register['part2title'] = '<h2>' . $register['part2title'] . '</h2>';
-		}
-		if (!empty($register['part2blurb'])) {
-			$register['part2blurb'] = '<p>' . $register['part2blurb'] . '</p>';
-		}
-		$content .= $register['part2title'];
-	}
-	if ($values['yourname']) $content .= '<p>'.$partone['yourname'].': ' . $values['yourname'] . '</p>';
-	if ($values['youremail']) $content .= '<p>'.$partone['youremail'].': ' . $values['youremail'] . '</p>';
-	if ($values['yourtelephone']) $content .= '<p>'.$partone['yourtelephone'].': ' . $values['yourtelephone'] . '</p>';
-	
-	$register['borrowvalues'] = str_replace('[amount]', $settings['currency'] . ' ' . $values['loan-amount'], $register['borrowvalues']);
-	$register['borrowvalues'] = str_replace('[period]', $values['loan-period'] . ' ' . $settings['period'], $register['borrowvalues']);
-	$register['reference'] = str_replace('[reference]', $values['reference'], $register['reference']);
-	
-	$content .= '<p>'.$register['borrowvalues'].'</p>
-	<h4><a href="'.home_url().'">'.$register['changedetails'].'</a></h4>
-	<p>'.$register['reference'].'</p>'
-	.$register['part2blurb'];
-	
-	for($i = 1; $i < 10; $i++) {
-		if ($register['use'.$i]) {
-			$content .= '<fieldset><h2>'.$register['section'.$i].'</h2>';
-			$sectionerror = $errors['documents'] ? ' style="color:red;"' : '';
-			if ($register['section'.$i.'description']) $content .= '<p'.$sectionerror.'>'.$register['section'.$i.'description'].'</p>';
-			foreach ($arr as $key) {
-				if ($application[$key]['section'] == $i && $application[$key]['use']) { 
-					$class = '';
-					if (isset($application[$key]['class'])) $class = $application[$key]['class'];
-				
-					if ($application[$key]['type'] == 'text') {
-						$required = ($application[$key]['required'] ? ' class = "required" ' : null );
-						if ($errors[$key]) $required = ' style="border-color:red;"';
-						$content .= '<p class="'.$class.'"><strong>'.$application[$key]['label'].'</strong><br>
-						<input id="'.$key.'" name="'.$key.'" type="text" '.$required.' value="'.$values[$key].'" /></p>'."\n";
-					}
-					if ($application[$key]['type'] == 'date') {
-						$required = ($application[$key]['required'] ? ' required ' : null );
-						if ($errors[$key]) $required = '" style="border-color:red;"';
-						$content .= '<p class="'.$class.'"><strong>'.$application[$key]['label'].'</strong><br>
-						<input type="text" id="'.$key.'" class="qisdate'.$required.'" name="'.$key.'" value="' . $values[$key] . '" />
-						<script type="text/javascript">jQuery(document).ready(function() {jQuery(\'\.qisdate\').datepicker({dateFormat : \'dd M yy\'});});</script></p>'."\r\t";
-					}
-					if ($application[$key]['type'] == 'dropdown') {
-						$required = ($application[$key]['required'] ? ' class = "required" ' : null );
-						if ($errors[$key]) $required = ' style="border-color:red;"';
-						$content .= '<p class="'.$class.'"><strong>'.$application[$key]['label'].'</strong><br>';
-						$content .= '<select name="'.$key.'" '.$required.'>'."\r\t";
-						$d = explode(",",$application[$key]['options']);
-						foreach ($d as $item) {
-						   $selected = '';
-						   if ($values[$key] == $item) $selected = 'selected';
-						   $content .= '<option value="' .  $item . '" ' . $selected .'>' .  $item . '</option>'."\r\t";
-						}
-						$content .= '</select></p>'."\r\t";
-					}
-					if ($application[$key]['type'] == 'checkbox') {
-						$required = ($application[$key]['required'] ? ' style = "color:green" ' : null );
-						if ($errors[$key]) $required = ' style = "color:red;"';
-						$content .= '<p'.$required.'  class="'.$class.'"><input type="checkbox" name="'.$key.'" value="checked" '.$values[$key].' /> '.$application[$key]['label'].'</p>';
-					}
-					if ($application[$key]['type'] == 'link') {
-						$required = ($application[$key]['required'] ? ' style = "color:green" ' : null );
-						if ($errors[$key]) $required = ' style = "color:red;"';
-						$msg = $application[$key]['label'];
-						if ($register['termstarget']) $target = ' target="blank" ';
-						$msg = str_replace('[a]', '<a href= "'.$register['termsurl'].'"'.$target.'>', $msg);
-						$msg = str_replace('[/a]', '</a>', $msg);
-						$content .= '<p'.$required.'  class="'.$class.'"><input type="checkbox" name="'.$key.'" value="checked" '.$values[$key].' /> '.$msg.'</p>';
-					}
-					if ($application[$key]['type'] == 'multi') {
-						$required = ($application[$key]['required'] ? ' style = "color:green" ' : null );
-						if ($errors[$key]) $required = ' style = "color:red;"';
-						$content .= '<p'.$required.'><strong>'.$application[$key]['label'].'</strong></p>';
-						$d = explode(",",$application[$key]['options']);
-						foreach ($d as $item) {
-							$underscore = str_replace(' ','_',$item);
-							$content .= '<p  class="'.$class.'"><input type="checkbox" name="'.$key.$underscore .'" value="checked" '.$values[$key.$underscore].' /> '.$item.'</p>';
-						}
-					}
-					if ($application[$key]['type'] == 'upload') {
-						$content .= '<p class="'.$class.'"><strong>'.$application[$key]['label'].'</strong><br>';
-						$content .= '<select name="'.$key.'">'."\r\t";
-						$d = explode(",",$application[$key]['options']);
-						foreach ($d as $item) {
-						   $selected = '';
-						   if ($values[$key] == $item) $selected = 'selected';
-						   $content .= '<option value="' .  $item . '" ' . $selected .'>' .  $item . '</option>'."\r\t";
-						}
-						$content .= '</select></p>'."\r\t";
-						$content .= $errors['attach'.$key] ? '<p style="color:red;">'.$errors['attach'.$key].'</p>' : '';
-						$content .= '<p class="'.$class.'"><input id="'.$key.'" name="'.$key.'" type="file" value="'.$values[$key].'" /></p>'."\n";
-					}
-				}
-			}
-		}
-		$content .= '</fieldset>';
-	}
-	$content .= '
-	<input type="hidden" name="formname" value="' . esc_attr( $values['formname'] ) . '" />
-	<input type="hidden" name="sentdate" value="' . esc_attr( $values['sentdate'] ) . '" />
-	<input type="hidden" name="reference" value="' . esc_attr( $values['reference'] ) . '" />
-	<input type="hidden" name="yourname" value="' . esc_attr( $values['yourname'] ) . '" />
-	<input type="hidden" name="youremail" value="' . esc_attr( $values['youremail'] ) . '" />
-	<input type="hidden" name="yourtelephone" value="' . esc_attr( $values['yourtelephone'] ) . '" />
-	<input type="hidden" name="loan-amount" value="' . esc_attr( $values['loan-amount'] ) . '" />
-	<input type="hidden" name="loan-period" value="' . esc_attr( $values['loan-period'] ) . '" />
-	<input type="hidden" name="rate" value="' . esc_attr( $values['rate'] ) . '" />
-	<input onClick="check();" type="submit" value="'.$register['part2submit'].'" class="submit" name="part2submit" />
-	</div>
-	</form>';
-	$content .= '
-		<script type="text/javascript">
-			jQuery(document).ready(function() {
-				$ = jQuery;
-				$(".sc_app_hidden").hide();
-				$("select[name=hometime]").change(function(e) {
-					if (this.selectedIndex > 4 || this.selectedIndex == 0) {
-						if ($(".sc_app_hidden").is(":visible"))
-							$(".sc_app_hidden").slideToggle();
-					} else {
-						if (!$(".sc_app_hidden").is(":visible"))
-							$(".sc_app_hidden").slideToggle();
-					}
-				});
-			});
-		</script>';
-
-	return $content;
-}
-
-// Verify part 2 application
-function qis_verify_application(&$values, &$errors) {
-	$application = qis_get_stored_application($values['formname']);
-	$register = qis_get_stored_application_messages($values['formname']);
-	
-	$arr = array_keys($application);
-	foreach ($arr as $key => $value) {
-		if ($application[$key]['type'] == 'multi') {
-			$d = explode(",",$application[$key]['options']);
-			foreach ($d as $item) {
-				if ($values[$key.$item]) $values['loanreason'] = 'checked';
-			}
-		}
-		if ($application[$key]['required'] == 'use' && $application[$key]['required'] == 'checked' && $register['use'.$application[$key]['section']] && (empty($values[$key]) || $values[$key] == 'Select...')) 
-			$errors[$key] = 'error';
-		}
-	
-	$filenames = array('identityproof','addressproof');
-	
-	foreach($filenames as $item) {
-		$tmp_name = $_FILES[$item]['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$name = $_FILES[$item]['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		$size = $_FILES[$item]['size']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		if (file_exists($tmp_name)) {
-			if ($size > $register['attach_size']) $errors['attach'.$item] = $register['attach_error_size']; 
-			$ext = strtolower(substr(strrchr($name,'.'),1));
-			if (strpos($register['attach_type'],$ext) === false) $errors['attach'.$item] = $register['attach_error_type'];
-		}
-	}
-	return (count($errors) == 0);	
-}
-
-// Process part 2 application
-function qis_process_application($values) {
-	global $post;
-	$content='';
-	$register = qis_get_stored_register ('default');
-	$applicationmessages = qis_get_stored_application_messages($values['formname']);
-	$formnumber = $values['formname'];
-	$settings = qis_get_stored_settings($formnumber);
-	$auto = qis_get_stored_autoresponder($formnumber);
-	$application = qis_get_stored_application($formnumber);
-	$message = get_option('qis_messages');
-	
-	$arr = array_keys($application);
-	
-	if ($message) {
-		$count = count($message);
-		for($i = 0; $i <= $count; $i++) {
-		if ($message[$i]['reference'] == $values['reference']) {
-			$values['complete'] = 'Completed';
-			$message[$i] = $values;
-			update_option('qis_messages',$message);
-			}
-		}	
-	}
-
-	$filenames = array('identityproof','addressproof');
-	
-	$attachments = array();
-	if ( ! function_exists( 'wp_handle_upload' ) ) {
-		require_once( ABSPATH . 'wp-admin/includes/file.php' );
-	}
-	add_filter( 'upload_dir', 'qis_upload_dir' );
-	
-	$dir = (realpath(WP_CONTENT_DIR . '/uploads/qis/') ? '/uploads/qis/' : '/uploads/');
-	foreach($filenames as $item) {
-		$filename = $_FILES[$item]['tmp_name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-		if (file_exists($filename)) {
-			$name = $values['reference'].'-'.$_FILES[$item]['name']; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$name = trim(preg_replace('/[^A-Za-z0-9. ]/', '', $name));
-			$name = str_replace(' ','-',$name);
-			$_FILES[$item]['name'] = $name;
-			$uploadedfile = $_FILES[$item]; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-			$upload_overrides = array( 'test_form' => false );
-			$movefile = wp_handle_upload( $uploadedfile, $upload_overrides );
-			array_push($attachments , WP_CONTENT_DIR .$dir.$name);
-		}
-	}
-	
-	remove_filter( 'upload_dir', 'qis_upload_dir' );
-	
-	$content = qis_build_complete_message($values,$application,$arr,$register);
-	
-	qis_send_full_notification ($register,$values,$content,true,$attachments);
-	
-	qis_send_full_confirmation ($auto,$values,$content,$register);
 }
 
 function qis_upload_dir( $dir ) {

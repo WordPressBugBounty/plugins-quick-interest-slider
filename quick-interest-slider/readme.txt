@@ -3,8 +3,8 @@
 Contributors: Dev
 Tags: loan slider jquery
 Requires at least: 6.0
-Tested up to: 6.9
-Stable tag: 3.1.7
+Tested up to: 7.0
+Stable tag: 3.1.8
 License: GPLv2 or later
 
 A simple repayment calculator. Uses sliders to set the amount and term and displays a range of outputs
@@ -38,7 +38,6 @@ Bespoke versions available for bank comparisons, quotes, full loan applications 
 *	Store, manage and download applications
 *	Annuity and amortization repayment calculations
 *	Additional layout options
-*	Currency selectors and foreign exchange
 *	Tooltips
 *	Downpayment calculation
 *	Interest rate sliders
@@ -67,6 +66,11 @@ Bespoke versions available for bank comparisons, quotes, full loan applications 
 6.	Change the options in the plugin settings page.
 
 == Changelog ==
+
+= 3.1.8 =
+
+*   Security fix: subscribe/unsubscribe links now use an unguessable per-record token instead of the submission timestamp, preventing unauthenticated attackers from confirming or deleting other applicants' stored data (CVE-2025-62153)
+*   Removal of redundant Part 2 application functions
 
 = 3.1.7 =
 

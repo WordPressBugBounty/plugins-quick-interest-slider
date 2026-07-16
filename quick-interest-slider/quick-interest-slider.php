@@ -3,7 +3,7 @@
 Plugin Name: Quick Interest Slider
 Plugin URI: http://loanpaymentplugin.com/
 Description: Interest calculator with slider and multiple display options.
-Version: 3.1.7
+Version: 3.1.8
 Author: aerin
 Author URI: http://quick-plugins.com/
 Text Domain: quick-interest-slider
@@ -13,7 +13,7 @@ License: GPLv2 or later
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define('QIS_VERSION', '3.1.7');
+define('QIS_VERSION', '3.1.8');
 
 require_once( plugin_dir_path( __FILE__ ) . '/options.php' );
 require_once( plugin_dir_path( __FILE__ ) . '/register.php' );
@@ -207,7 +207,6 @@ function qis_loop($atts) {
 		'loanlabel'		 	=> '',
 		'termlabel'		 	=> '',
 		'interestlabel' 	=> '',
-		'parttwo'			=> '',
 		'usedownpayment'	=> '',
 		'float'			 	=> '',
 		'percentages'		=> '',
@@ -291,23 +290,9 @@ function qis_loop($atts) {
 		} else {
 			$formvalues = qis_process_form($formvalues);
 			$apply = qis_get_stored_application_messages($formvalues['formname']);
-			if ($apply['enable'] || $atts['parttwo']) return qis_display_application($formvalues,array(),'checked');
-			else return	qis_display($atts,$formvalues, $formerrors,'registered');
+			return	qis_display($atts,$formvalues, $formerrors,'registered');
 		}
 		
-	// Part 2 Application
-		
-	} elseif (!empty($_POST['part2submit'])) {
-		$formvalues = array_map( 'sanitize_text_field', wp_unslash( $_POST ) );
-		$formerrors = array();
-		if (!qis_verify_application($formvalues, $formerrors)) {
-			return qis_display_application($formvalues, $formerrors,null);
-		} else {
-			qis_process_application($formvalues);
-			return qis_display_result($formvalues);
-		}
-
-	
 	} elseif (!isset($_POST['attributes']) && ($dropdown['use'])) {
 		
 		// Show Dropdown 
@@ -1188,7 +1173,10 @@ function qis_subscribe() {
 	if ( isset ($_GET['sub']) ) {
 		$ref = sanitize_text_field( wp_unslash( $_GET['sub'] ) );
 		foreach ($message as $key => $value ) {
-			if ($ref == $value['timestamp'] && $value['confirmed'] != true) {
+			// Require the unguessable per-record token (constant-time compare).
+			// Legacy records with no token cannot be authorised this way.
+			if ( empty( $value['unsub_token'] ) || ! hash_equals( (string) $value['unsub_token'], $ref ) ) continue;
+			if ($value['confirmed'] != true) {
 				if ($auto['notification']) qis_send_notification ($value);
 				$message[$key]['confirmed'] = true;
 				update_option('qis_messages',$message);
@@ -1200,12 +1188,13 @@ function qis_subscribe() {
 	if ( isset ($_GET['unsub']) ) {
 		$ref = sanitize_text_field( wp_unslash( $_GET['unsub'] ) );
 		foreach ($message as $key => $value )	{
-			if ($ref == $value['timestamp']) {
-				unset($value);
-				$message = array_values($message);
-				update_option('qis_messages',$message);
-				return '<div class="emailresponse">'.esc_html($auto['unsubscribemessage']).'</div>';
-			}
+			// Require the unguessable per-record token (constant-time compare).
+			// Legacy records with no token cannot be authorised this way.
+			if ( empty( $value['unsub_token'] ) || ! hash_equals( (string) $value['unsub_token'], $ref ) ) continue;
+			unset($message[$key]);
+			$message = array_values($message);
+			update_option('qis_messages',$message);
+			return '<div class="emailresponse">'.esc_html($auto['unsubscribemessage']).'</div>';
 		}
 		return '<div class="emailresponse">You have already unsubscribed</div>';
 	}
